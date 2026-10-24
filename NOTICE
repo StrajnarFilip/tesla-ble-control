@@ -1,0 +1,28 @@
+Tesla BLE Control
+Copyright 2026 Filip Strajnar
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes software derived from vehicle-command by Tesla, Inc.
+(https://github.com/teslamotors/vehicle-command), licensed under the Apache License,
+Version 2.0. A copy of that license is in third_party/vehicle-command/LICENSE.
+
+Source revision used: main at commit fc5a191 (2026-10-21),
+Go pseudo-version v0.4.2-0.20261021222658-fc5a1910ad45.
+
+- protocol/src/main/proto/*.proto are copied from vehicle-command without changes.
+- The Kotlin code under protocol/src/main/kotlin (crypto, session, dispatch, transport, vehicle and
+  commands) is a port of vehicle-command's Go code: internal/authentication, internal/dispatcher,
+  pkg/protocol, pkg/vehicle, pkg/connector/ble and the command list of cmd/tesla-control. It was
+  rewritten in Kotlin and adapted to Android; the wire format and cryptography are unchanged.
+- protocol/src/test/resources/golden/commands.json was produced by running vehicle-command's own
+  client (tools/vehicle-sim/sim/golden.go).
+- tools/vehicle-sim builds a test-only vehicle simulator against vehicle-command's packages,
+  including its internal authentication package. It is not part of the app.
+
+The app bundles the Barlow and Barlow Semi Condensed typefaces (app/src/main/res/font), Copyright
+2017 The Barlow Project Authors (https://github.com/jpt/barlow), licensed under the SIL Open Font
+License 1.1; see third_party/barlow/OFL.txt.
+
+Tesla and the Tesla logo are trademarks of Tesla, Inc. This project is not affiliated with or
+endorsed by Tesla, Inc.

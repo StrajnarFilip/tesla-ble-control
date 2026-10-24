@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_step_count">Step %1$d of %2$d</string>
+    <string name="guide_start">Set up my car</string>
+    <string name="guide_try_demo">Try the demo first</string>
+
+    <string name="guide_welcome_title">Control your car over Bluetooth</string>
+    <string name="guide_welcome_body">This app talks directly to your car with Tesla\'s secure Bluetooth protocol. No internet connection or Tesla account is needed. Setup takes about five minutes, and one step needs you in the car.</string>
+    <string name="guide_welcome_picture">A phone sending a Bluetooth signal to a car.</string>
+
+    <string name="guide_need_title">What you need</string>
+    <string name="guide_need_1">This phone, with Bluetooth on.</string>
+    <string name="guide_need_2">Your car\'s key card (the card you tap to drive).</string>
+    <string name="guide_need_3">To sit in the car for the pairing step.</string>
+    <string name="guide_need_4">The car\'s VIN. The next step shows where to find it.</string>
+    <string name="guide_need_picture">A phone, a key card and a car.</string>
+
+    <string name="guide_vin_title">Your car</string>
+    <string name="guide_vin_body">Enter the 17-character VIN (Vehicle Identification Number).</string>
+    <string name="guide_vin_from_app">Quickest: in the Tesla app, touch and hold the VIN at the bottom of the car\'s main screen to copy it, then come back and tap “Paste VIN”.</string>
+    <string name="guide_vin_from_car">You can also find it on the car\'s touchscreen (Controls, then Software), through the windshield at the bottom corner on the driver\'s side, or on the label in the driver\'s door frame.</string>
+    <string name="guide_vin_paste">Paste VIN</string>
+    <string name="guide_vin_paste_none">The copied text doesn\'t contain a VIN.</string>
+    <string name="guide_vin_picture">The VIN plate at the bottom corner of the windshield, and the VIN on the touchscreen.</string>
+    <string name="guide_vin_label">VIN</string>
+    <string name="guide_vin_invalid">A VIN has 17 letters and digits, without I, O or Q.</string>
+    <string name="guide_vin_ok">VIN looks right</string>
+    <string name="guide_name_label">Name in this app</string>
+    <string name="guide_name_default">My car</string>
+    <string name="guide_model_label">Model</string>
+
+    <string name="guide_permissions_title">Allow Bluetooth</string>
+    <string name="guide_permissions_body">Android will ask for two permissions.\n\n• Nearby devices lets the app find and connect to your car.\n\n• Location is required by Android for any Bluetooth scan. Choose “Precise”. The app only uses it to find your car.\n\nLocation also needs to be switched on the first time the app looks for your car.</string>
+    <string name="guide_permissions_picture">A permission dialog with the Allow button highlighted.</string>
+    <string name="guide_permission_granted">Bluetooth permissions allowed</string>
+    <string name="guide_permission_needed">Bluetooth permissions not allowed yet</string>
+    <string name="guide_location_on">Location is on</string>
+    <string name="guide_location_off">Location is off</string>
+    <string name="guide_bluetooth_on">Bluetooth is on</string>
+    <string name="guide_bluetooth_off">Bluetooth is off</string>
+    <string name="guide_turn_on_location">Turn on location</string>
+    <string name="guide_permission_settings">Open app permissions</string>
+
+    <string name="guide_find_title">Find your car</string>
+    <string name="guide_find_body">Stand next to the car or sit inside. The app looks for your car\'s own Bluetooth signal, which is unique to its VIN.</string>
+    <string name="guide_find_picture">A phone sending out signals to find a car.</string>
+    <string name="guide_find_searching">Looking for your car…</string>
+    <string name="guide_find_found">Found your car (signal: %1$s)</string>
+    <string name="guide_find_not_found">Not found yet. Make sure you\'re close to the car and the VIN is right.</string>
+    <string name="guide_find_full">Found your car, but it already has 3 Bluetooth connections. Move other phones away, then search again.</string>
+    <string name="guide_find_again">Search again</string>
+    <string name="guide_signal_strong">strong</string>
+    <string name="guide_signal_good">good</string>
+    <string name="guide_signal_weak">weak, move closer</string>
+
+    <string name="guide_role_title">Choose access</string>
+    <string name="guide_role_body">Choose what this phone may do. You can pair again later to change it.</string>
+    <string name="guide_role_picture">An owner card with a key, and a driver card with a steering wheel.</string>
+    <string name="guide_role_owner">Owner</string>
+    <string name="guide_role_owner_desc">Full control, including adding and removing keys and changing PINs. Recommended for your own car.</string>
+    <string name="guide_role_driver">Driver</string>
+    <string name="guide_role_driver_desc">Everything except managing keys and PINs. Good for a family member\'s phone.</string>
+
+    <string name="guide_pair_title">Approve with your key card</string>
+    <string name="guide_pair_step1">1. Sit in the car with your key card. If your phone is on the wireless charger, take it off.</string>
+    <string name="guide_pair_step2">2. Tap “Send pairing request”.</string>
+    <string name="guide_pair_step3">3. Right away, place the key card flat on the card reader and hold it still for a few seconds.</string>
+    <string name="guide_pair_step4">The car\'s screen may not show anything. That\'s normal: this app notices the approval by itself.</string>
+    <string name="guide_pair_where">Where the card reader is</string>
+    <string name="guide_pair_where_charger">Model 3 from 2024: on the wireless phone charger.</string>
+    <string name="guide_pair_where_console">Earlier Model 3, and Model Y: on the centre console, just behind the cup holders.</string>
+    <string name="guide_pair_where_other">Model S, Model X and Cybertruck: if one spot doesn\'t react, try the other.</string>
+    <string name="guide_pair_picture_charger">A key card placed on the wireless phone charger at the front of the centre console.</string>
+    <string name="guide_pair_picture_console">A key card placed on the centre console just behind the cup holders.</string>
+    <string name="guide_pair_send">Send pairing request</string>
+    <string name="guide_pair_waiting">Waiting for the key card… %1$s</string>
+    <string name="guide_pair_hint">Nothing happening? Try the other spot: the wireless phone charger, or just behind the cup holders. Keep the card still for a few seconds, with no phone on top of it.</string>
+    <string name="guide_pair_done">Approved. This phone is now a key.</string>
+    <string name="guide_pair_timeout">No approval yet. Send the request again, then place the key card on the reader straight away.</string>
+
+    <string name="guide_done_title">You\'re all set</string>
+    <string name="guide_done_body">This phone is now a key for %1$s.</string>
+    <string name="guide_done_picture">Quick Settings with the car lock tile highlighted.</string>
+    <string name="guide_add_tile">Add “Car lock” to Quick Settings</string>
+    <string name="guide_tile_manual">To add it yourself: swipe down twice from the top of the screen, tap the pencil (edit), and drag “Car lock” into your tiles.</string>
+    <string name="guide_finish">Finish</string>
+    <string name="guide_skip_pairing">I already paired this phone</string>
+
+    <!-- Troubleshooting -->
+    <string name="trouble_title">Troubleshooting</string>
+    <string name="trouble_not_found_title">The app can\'t find my car</string>
+    <string name="trouble_not_found_1">Stand within a few metres of the car. Bluetooth range is short, especially through walls.</string>
+    <string name="trouble_not_found_2">Check the VIN in Settings, then Cars. One wrong character makes the app look for a different car.</string>
+    <string name="trouble_not_found_3">Make sure Bluetooth is on, and location too for the first search.</string>
+    <string name="trouble_not_found_4">Open a door to wake the car, then try again.</string>
+    <string name="trouble_full_title">The car already has 3 Bluetooth connections</string>
+    <string name="trouble_full_1">The car keeps at most three Bluetooth connections, shared by key fobs and phone keys.</string>
+    <string name="trouble_full_2">Move other phones that are keys for this car away (or close their Tesla app), then try again.</string>
+    <string name="trouble_full_picture">A car connected to three devices, with a fourth phone refused.</string>
+    <string name="trouble_pairing_title">Pairing doesn\'t finish</string>
+    <string name="trouble_pairing_1">The car\'s screen often shows nothing while pairing. Place the key card on the reader right after you send the request.</string>
+    <string name="trouble_pairing_2">Model 3 from 2024 reads the card on the wireless phone charger. Earlier Model 3 and Model Y read it just behind the cup holders. Not sure? Try both.</string>
+    <string name="trouble_pairing_3">Take your phone off the charger first. Tesla warns that a phone and a card on the charger together can damage the card.</string>
+    <string name="trouble_pairing_4">If the car has many keys, remove an old one first, from Security, then Keys, or on the car\'s Locks screen.</string>
+    <string name="trouble_unpaired_title">It says this phone isn\'t paired</string>
+    <string name="trouble_unpaired_1">The key may have been removed on the car\'s Locks screen, or the app was reinstalled, which creates a new key.</string>
+    <string name="trouble_unpaired_2">Run the setup guide again and approve with your key card.</string>
+    <string name="trouble_unpaired_3">Remove the old phone key on the car\'s Locks screen to keep the list tidy.</string>
+    <string name="trouble_asleep_title">The car is asleep, slow, or numbers are missing</string>
+    <string name="trouble_asleep_1">Locks, trunk and frunk work while the car sleeps.</string>
+    <string name="trouble_asleep_2">Climate, charging and media need the car awake. The app wakes it automatically (Settings, then “Wake the car automatically”). Waking can take up to 30 seconds.</string>
+    <string name="trouble_asleep_3">Battery and climate readings appear once the car is awake. The app doesn\'t wake the car just to read them, to save its battery.</string>
+    <string name="trouble_asleep_picture">A sleeping car.</string>
+    <string name="trouble_bluetooth_title">Bluetooth is off or a permission was denied</string>
+    <string name="trouble_bluetooth_1">Turn on Bluetooth from Quick Settings.</string>
+    <string name="trouble_bluetooth_2">If you denied a permission, open the phone\'s Settings, then Apps, then Tesla BLE Control, then Permissions, and allow Nearby devices and Location.</string>
+    <string name="trouble_bluetooth_3">Location must be on for the first search. After that the app connects to the remembered car without it.</string>
+    <string name="trouble_bluetooth_picture">The Bluetooth symbol crossed out.</string>
+    <string name="trouble_cars_title">Using the app with several cars</string>
+    <string name="trouble_cars_1">Add each car in Settings, then Cars, then “Add another car”, and pair it once with its key card.</string>
+    <string name="trouble_cars_2">Switch cars with the car name at the top of every screen.</string>
+    <string name="trouble_cars_3">This phone uses the same key for every car it is paired with.</string>
+</resources>

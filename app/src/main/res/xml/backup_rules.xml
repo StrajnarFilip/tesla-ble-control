@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and lower. The key and session caches are in noBackupFilesDir and never backed up. -->
+<full-backup-content>
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="datastore/" />
+</full-backup-content>

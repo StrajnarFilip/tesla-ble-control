@@ -1,0 +1,774 @@
+[
+  {
+    "id": "lock",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "1001"
+  },
+  {
+    "id": "unlock",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "1000"
+  },
+  {
+    "id": "wake",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "101e"
+  },
+  {
+    "id": "drive",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "1014"
+  },
+  {
+    "id": "autosecure-modelx",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "101d"
+  },
+  {
+    "id": "trunk-open",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "22022801"
+  },
+  {
+    "id": "trunk-close",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "22022804"
+  },
+  {
+    "id": "trunk-move",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "22022801"
+  },
+  {
+    "id": "frunk-open",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "22023001"
+  },
+  {
+    "id": "tonneau-open",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "22024003"
+  },
+  {
+    "id": "tonneau-close",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "22024004"
+  },
+  {
+    "id": "tonneau-stop",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "22024002"
+  },
+  {
+    "id": "body-controller-state",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "0a00"
+  },
+  {
+    "id": "list-keys",
+    "args": {},
+    "kind": "vcsec",
+    "payload": "0a020805"
+  },
+  {
+    "id": "add-key",
+    "args": {
+      "FORM_FACTOR": "android_device",
+      "PUBLIC_KEY": "04ed1b30c15af39204a59605e16c61691c7002e8412609a839af473fc9e02d4483da37a3b5262096e05b04db3360e40dc924a770c6166f878faa60ee7bfd11d25f",
+      "ROLE": "driver"
+    },
+    "kind": "vcsec",
+    "payload": "82014d320208072a470a430a4104ed1b30c15af39204a59605e16c61691c7002e8412609a839af473fc9e02d4483da37a3b5262096e05b04db3360e40dc924a770c6166f878faa60ee7bfd11d25f2003"
+  },
+  {
+    "id": "remove-key",
+    "args": {
+      "PUBLIC_KEY": "04ed1b30c15af39204a59605e16c61691c7002e8412609a839af473fc9e02d4483da37a3b5262096e05b04db3360e40dc924a770c6166f878faa60ee7bfd11d25f"
+    },
+    "kind": "vcsec",
+    "payload": "82014512430a4104ed1b30c15af39204a59605e16c61691c7002e8412609a839af473fc9e02d4483da37a3b5262096e05b04db3360e40dc924a770c6166f878faa60ee7bfd11d25f"
+  },
+  {
+    "id": "add-key-request",
+    "args": {
+      "FORM_FACTOR": "android_device",
+      "PUBLIC_KEY": "04ed1b30c15af39204a59605e16c61691c7002e8412609a839af473fc9e02d4483da37a3b5262096e05b04db3360e40dc924a770c6166f878faa60ee7bfd11d25f",
+      "ROLE": "owner"
+    },
+    "kind": "raw",
+    "payload": "0a54125082014d320208072a470a430a4104ed1b30c15af39204a59605e16c61691c7002e8412609a839af473fc9e02d4483da37a3b5262096e05b04db3360e40dc924a770c6166f878faa60ee7bfd11d25f20021802"
+  },
+  {
+    "id": "session-info",
+    "args": {
+      "DOMAIN": "vcsec",
+      "PUBLIC_KEY": "04ed1b30c15af39204a59605e16c61691c7002e8412609a839af473fc9e02d4483da37a3b5262096e05b04db3360e40dc924a770c6166f878faa60ee7bfd11d25f"
+    },
+    "kind": "sessioninfo",
+    "payload": "04ed1b30c15af39204a59605e16c61691c7002e8412609a839af473fc9e02d4483da37a3b5262096e05b04db3360e40dc924a770c6166f878faa60ee7bfd11d25f"
+  },
+  {
+    "id": "climate-on",
+    "args": {},
+    "kind": "carserver",
+    "payload": "120452020801"
+  },
+  {
+    "id": "climate-off",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12025200"
+  },
+  {
+    "id": "climate-set-temp",
+    "args": {
+      "TEMP": "21.5"
+    },
+    "kind": "carserver",
+    "payload": "1210720e2a021a00350000ac413d0000ac41"
+  },
+  {
+    "id": "climate-set-temp",
+    "args": {
+      "PASSENGER_TEMP": "19.5",
+      "TEMP": "22c"
+    },
+    "kind": "carserver",
+    "payload": "1210720e2a021a00350000b0413d00009c41"
+  },
+  {
+    "id": "climate-set-temp",
+    "args": {
+      "TEMP": "70f"
+    },
+    "kind": "carserver",
+    "payload": "1210720e2a021a00358ee3a8413d8ee3a841"
+  },
+  {
+    "id": "seat-heater",
+    "args": {
+      "LEVEL": "high",
+      "SEAT": "front-left"
+    },
+    "kind": "carserver",
+    "payload": "1209a202060a042a003a00"
+  },
+  {
+    "id": "seat-heater",
+    "args": {
+      "LEVEL": "medium",
+      "SEAT": "2nd-row-left-back"
+    },
+    "kind": "carserver",
+    "payload": "1209a202060a0422005200"
+  },
+  {
+    "id": "seat-heater",
+    "args": {
+      "LEVEL": "off",
+      "SEAT": "3rd-row-right"
+    },
+    "kind": "carserver",
+    "payload": "1209a202060a0412007a00"
+  },
+  {
+    "id": "seat-cooler",
+    "args": {
+      "LEVEL": "low",
+      "SEAT": "front-right"
+    },
+    "kind": "carserver",
+    "payload": "12098a03060a0408021002"
+  },
+  {
+    "id": "steering-wheel-heater",
+    "args": {
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "12046a020801"
+  },
+  {
+    "id": "auto-seat-and-climate",
+    "args": {
+      "POSITIONS": "LR",
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "120f82030c0a04080110010a0408011002"
+  },
+  {
+    "id": "auto-seat-and-climate",
+    "args": {
+      "POSITIONS": "L",
+      "STATE": "off"
+    },
+    "kind": "carserver",
+    "payload": "12078203040a021001"
+  },
+  {
+    "id": "preconditioning-max",
+    "args": {
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "120462020801"
+  },
+  {
+    "id": "preconditioning-max",
+    "args": {
+      "OVERRIDE": "on",
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "1206620408011001"
+  },
+  {
+    "id": "bioweapon-mode",
+    "args": {
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "12059a02020801"
+  },
+  {
+    "id": "cabin-overheat-protection",
+    "args": {
+      "FAN_ONLY": "on",
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "120792030408011001"
+  },
+  {
+    "id": "cabin-overheat-protection-temp",
+    "args": {
+      "LEVEL": "medium"
+    },
+    "kind": "carserver",
+    "payload": "12059204020802"
+  },
+  {
+    "id": "climate-keeper",
+    "args": {
+      "MODE": "dog"
+    },
+    "kind": "carserver",
+    "payload": "1205e202020802"
+  },
+  {
+    "id": "charge-port-open",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203f20300"
+  },
+  {
+    "id": "charging-start",
+    "args": {},
+    "kind": "carserver",
+    "payload": "120432021200"
+  },
+  {
+    "id": "charging-stop",
+    "args": {},
+    "kind": "carserver",
+    "payload": "120432022a00"
+  },
+  {
+    "id": "charge-max-range",
+    "args": {},
+    "kind": "carserver",
+    "payload": "120432022200"
+  },
+  {
+    "id": "charge-standard-range",
+    "args": {},
+    "kind": "carserver",
+    "payload": "120432021a00"
+  },
+  {
+    "id": "charging-set-limit",
+    "args": {
+      "PERCENT": "80"
+    },
+    "kind": "carserver",
+    "payload": "12042a020850"
+  },
+  {
+    "id": "charging-set-amps",
+    "args": {
+      "AMPS": "16"
+    },
+    "kind": "carserver",
+    "payload": "1205da02020810"
+  },
+  {
+    "id": "charge-port-close",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203ea0300"
+  },
+  {
+    "id": "charging-schedule",
+    "args": {
+      "TIME": "02:30"
+    },
+    "kind": "carserver",
+    "payload": "1208ca02050801109601"
+  },
+  {
+    "id": "charging-schedule-cancel",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203ca0200"
+  },
+  {
+    "id": "scheduled-departure",
+    "args": {
+      "DEPART_AT": "07:30",
+      "OFF_PEAK": "weekdays",
+      "OFF_PEAK_END": "06:00",
+      "PRECONDITIONING": "all"
+    },
+    "kind": "carserver",
+    "payload": "1213d20210080110c2031a020a002202120028e802"
+  },
+  {
+    "id": "scheduled-departure-clear",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203d20200"
+  },
+  {
+    "id": "charging-schedule-add",
+    "args": {
+      "DAYS": "weekdays",
+      "ID": "1700000000",
+      "LATITUDE": "46.05",
+      "LONGITUDE": "14.5",
+      "TIME": "22:00-6:00"
+    },
+    "kind": "carserver",
+    "payload": "12218a061e0880e2cfaa06183e200128a80a300138e802480155333338425d00006841"
+  },
+  {
+    "id": "charging-schedule-remove",
+    "args": {
+      "ID": "1700000000",
+      "TYPE": "id"
+    },
+    "kind": "carserver",
+    "payload": "12099206060880e2cfaa06"
+  },
+  {
+    "id": "charging-schedule-remove",
+    "args": {
+      "TYPE": "home"
+    },
+    "kind": "carserver",
+    "payload": "1205e206020801"
+  },
+  {
+    "id": "precondition-schedule-add",
+    "args": {
+      "DAYS": "all",
+      "ID": "1700000001",
+      "LATITUDE": "46.05",
+      "LONGITUDE": "14.5",
+      "REPEAT": "once",
+      "TIME": "07:30"
+    },
+    "kind": "carserver",
+    "payload": "121c9a06190881e2cfaa06187f20c203280130013d333338424500006841"
+  },
+  {
+    "id": "precondition-schedule-remove",
+    "args": {
+      "TYPE": "work"
+    },
+    "kind": "carserver",
+    "payload": "1205da06021001"
+  },
+  {
+    "id": "precondition-schedule-remove",
+    "args": {
+      "ID": "5",
+      "TYPE": "id"
+    },
+    "kind": "carserver",
+    "payload": "1205a206020805"
+  },
+  {
+    "id": "low-power-mode",
+    "args": {
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "12059208020801"
+  },
+  {
+    "id": "keep-accessory-power",
+    "args": {
+      "STATE": "off"
+    },
+    "kind": "carserver",
+    "payload": "1203d20800"
+  },
+  {
+    "id": "windows-vent",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12059202021a00"
+  },
+  {
+    "id": "windows-close",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12059202022200"
+  },
+  {
+    "id": "sunroof",
+    "args": {
+      "LEVEL": "15"
+    },
+    "kind": "carserver",
+    "payload": "1205820202080f"
+  },
+  {
+    "id": "homelink",
+    "args": {
+      "LATITUDE": "46.05",
+      "LONGITUDE": "14.5"
+    },
+    "kind": "carserver",
+    "payload": "120f8a020c0a0a0d333338421500006841"
+  },
+  {
+    "id": "honk",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203da0100"
+  },
+  {
+    "id": "flash-lights",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203d20100"
+  },
+  {
+    "id": "ping",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1205f202020801"
+  },
+  {
+    "id": "set-vehicle-name",
+    "args": {
+      "NAME": "Blue Bird"
+    },
+    "kind": "carserver",
+    "payload": "120eb2030b0a09426c75652042697264"
+  },
+  {
+    "id": "media-toggle-playback",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12027a00"
+  },
+  {
+    "id": "media-next-track",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12039a0100"
+  },
+  {
+    "id": "media-previous-track",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203a20100"
+  },
+  {
+    "id": "media-next-favorite",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12038a0100"
+  },
+  {
+    "id": "media-previous-favorite",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203920100"
+  },
+  {
+    "id": "media-volume-up",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12058201020802"
+  },
+  {
+    "id": "media-volume-down",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12058201020801"
+  },
+  {
+    "id": "media-set-volume",
+    "args": {
+      "VOLUME": "5.5"
+    },
+    "kind": "carserver",
+    "payload": "12088201051d0000b040"
+  },
+  {
+    "id": "sentry-mode",
+    "args": {
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "1205f201020801"
+  },
+  {
+    "id": "valet-mode-on",
+    "args": {
+      "PIN": "1234"
+    },
+    "kind": "carserver",
+    "payload": "120bfa01080801120431323334"
+  },
+  {
+    "id": "valet-mode-off",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203fa0100"
+  },
+  {
+    "id": "valet-pin-reset",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203e20100"
+  },
+  {
+    "id": "speed-limit-activate",
+    "args": {
+      "PIN": "1234"
+    },
+    "kind": "carserver",
+    "payload": "120a4a080801120431323334"
+  },
+  {
+    "id": "speed-limit-deactivate",
+    "args": {
+      "PIN": "1234"
+    },
+    "kind": "carserver",
+    "payload": "12084a06120431323334"
+  },
+  {
+    "id": "speed-limit-set",
+    "args": {
+      "MPH": "65"
+    },
+    "kind": "carserver",
+    "payload": "120b4209090000000000405040"
+  },
+  {
+    "id": "speed-limit-clear-pin",
+    "args": {
+      "PIN": "1234"
+    },
+    "kind": "carserver",
+    "payload": "12083a060a0431323334"
+  },
+  {
+    "id": "speed-limit-clear-pin-admin",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203fa0400"
+  },
+  {
+    "id": "pin-to-drive-clear",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203ca0500"
+  },
+  {
+    "id": "guest-mode-on",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12058a04020801"
+  },
+  {
+    "id": "guest-mode-off",
+    "args": {},
+    "kind": "carserver",
+    "payload": "12038a0400"
+  },
+  {
+    "id": "erase-guest-data",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203c20400"
+  },
+  {
+    "id": "parental-controls-on",
+    "args": {
+      "PIN": "1234"
+    },
+    "kind": "carserver",
+    "payload": "120bfa06080801120431323334"
+  },
+  {
+    "id": "parental-controls-off",
+    "args": {
+      "PIN": "1234"
+    },
+    "kind": "carserver",
+    "payload": "1209fa0606120431323334"
+  },
+  {
+    "id": "parental-controls-set-speed-limit",
+    "args": {
+      "MPH": "60"
+    },
+    "kind": "carserver",
+    "payload": "120c8a0709090000000000004e40"
+  },
+  {
+    "id": "parental-controls-enable-setting",
+    "args": {
+      "SETTING": "curfew",
+      "STATE": "on"
+    },
+    "kind": "carserver",
+    "payload": "120782070408031001"
+  },
+  {
+    "id": "parental-controls-clear-pin-admin",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203f20600"
+  },
+  {
+    "id": "software-update-start",
+    "args": {
+      "DELAY": "2h"
+    },
+    "kind": "carserver",
+    "payload": "1206ea010308a038"
+  },
+  {
+    "id": "software-update-cancel",
+    "args": {},
+    "kind": "carserver",
+    "payload": "1203ca0100"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "charge"
+    },
+    "kind": "carserver",
+    "payload": "12040a021200"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "climate"
+    },
+    "kind": "carserver",
+    "payload": "12040a021a00"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "drive"
+    },
+    "kind": "carserver",
+    "payload": "12040a022200"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "location"
+    },
+    "kind": "carserver",
+    "payload": "12040a023a00"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "closures"
+    },
+    "kind": "carserver",
+    "payload": "12040a024200"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "charge-schedule"
+    },
+    "kind": "carserver",
+    "payload": "12040a025200"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "precondition-schedule"
+    },
+    "kind": "carserver",
+    "payload": "12040a025a00"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "tire-pressure"
+    },
+    "kind": "carserver",
+    "payload": "12040a027200"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "media"
+    },
+    "kind": "carserver",
+    "payload": "12040a027a00"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "media-detail"
+    },
+    "kind": "carserver",
+    "payload": "12050a03820100"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "software-update"
+    },
+    "kind": "carserver",
+    "payload": "12050a038a0100"
+  },
+  {
+    "id": "state",
+    "args": {
+      "CATEGORY": "parental-controls"
+    },
+    "kind": "carserver",
+    "payload": "12050a039a0100"
+  }
+]

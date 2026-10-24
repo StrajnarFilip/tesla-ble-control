@@ -1,0 +1,23 @@
+# Gradle / Android
+.gradle/
+build/
+/local.properties
+/captures/
+*.apk
+*.aab
+*.keystore
+*.jks
+*.p12
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.kotlin/
+
+# Simulator build output (tools/vehicle-sim/build.sh)
+/tools/vehicle-sim/build/
+
+# OS
+.DS_Store
+/tools/icons/build/
