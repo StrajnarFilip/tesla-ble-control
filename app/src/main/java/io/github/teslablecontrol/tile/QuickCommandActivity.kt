@@ -100,11 +100,11 @@ class QuickCommandActivity : ComponentActivity() {
                     }
                 }
                 QuickCommandCard(
-                    title = CommandInfos.get(command).title,
-                    carName = profile?.name.orEmpty(),
+                    title = stringResource(CommandInfos.get(command).title),
+                    carName = if (app.settings.current.demoMode) stringResource(R.string.demo_car_name) else profile?.name.orEmpty(),
                     progress = activity?.let { stageText(LocalContext.current, it.stage) },
                     outcome = outcome,
-                    successText = CommandInfos.get(command).successText,
+                    successText = stringResource(CommandInfos.get(command).successText),
                     onClose = ::finish,
                     onOpenApp = {
                         startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

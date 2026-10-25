@@ -62,7 +62,7 @@ fun SecurityScreen(viewModel: MainViewModel, navigator: Navigator) {
 
     pinFor?.let { commandId ->
         PinDialog(
-            title = CommandInfos.get(commandId).title,
+            title = stringResource(CommandInfos.get(commandId).title),
             onSubmit = { pin ->
                 pinFor = null
                 viewModel.send(commandId, mapOf("PIN" to pin))
@@ -191,7 +191,7 @@ fun SecurityScreen(viewModel: MainViewModel, navigator: Navigator) {
             )
             PARENTAL_RULES.forEach { (id, label) ->
                 ToggleRow(
-                    title = label,
+                    title = stringResource(label),
                     checked = known[id],
                     busy = busy("parental-controls-enable-setting") && sendingRule == id,
                     onCheckedChange = { on ->
@@ -222,13 +222,13 @@ fun SecurityScreen(viewModel: MainViewModel, navigator: Navigator) {
 
 /** Parental controls rules, by catalog id. */
 private val PARENTAL_RULES = listOf(
-    "speed-limit" to "Limit top speed",
-    "acceleration" to "Chill acceleration",
-    "safety-features" to "Require safety features",
-    "curfew" to "Driving curfew",
-    "browser-blocked" to "Block the web browser",
-    "theater-blocked" to "Block Theater",
-    "arcade-blocked" to "Block Arcade",
+    "speed-limit" to R.string.label_limit_top_speed,
+    "acceleration" to R.string.label_chill_acceleration,
+    "safety-features" to R.string.label_require_safety_features,
+    "curfew" to R.string.label_driving_curfew,
+    "browser-blocked" to R.string.label_block_the_web_browser,
+    "theater-blocked" to R.string.label_block_theater,
+    "arcade-blocked" to R.string.label_block_arcade,
 )
 
 /**

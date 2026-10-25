@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tesla BLE Control</string>
+    <string name="app_name" translatable="false">Tesla BLE Control</string>
     <string name="tile_label">Car lock</string>
 
     <!-- Notifications -->
@@ -98,7 +98,7 @@
     <string name="home_key_unusable_title">This phone\'s key can\'t be read</string>
     <string name="home_charging_now">Charging</string>
     <string name="home_not_charging">Not charging</string>
-    <string name="value_unknown">—</string>
+    <string name="value_unknown" translatable="false">—</string>
     <string name="home_flash">Flash lights</string>
     <string name="home_honk">Honk</string>
 
@@ -158,7 +158,7 @@
     <string name="charging_port">Charge port</string>
     <string name="charging_start">Start charging</string>
     <string name="charging_stop">Stop charging</string>
-    <string name="charging_power_now">%1$s kW · %2$s V · %3$s A</string>
+    <string name="charging_power_now" translatable="false">%1$s kW · %2$s V · %3$s A</string>
     <string name="charging_scheduled">Scheduled charging</string>
     <string name="charging_departure">Scheduled departure</string>
     <string name="charging_schedules">Charge schedules</string>
@@ -179,8 +179,8 @@
     <string name="charging_mode_off">Off</string>
     <string name="charging_mode_start_at">Starts charging at %1$s</string>
     <string name="charging_mode_depart_by">Ready to leave at %1$s</string>
-    <string name="charging_to_standard_percent">Everyday (%1$d %%)</string>
-    <string name="charging_to_max_percent">Maximum (%1$d %%)</string>
+    <string name="charging_to_standard_percent">Everyday (%1$d\u00A0%%)</string>
+    <string name="charging_to_max_percent">Maximum (%1$d\u00A0%%)</string>
     <string name="charging_schedule_start">Start charging at a set time</string>
     <string name="charging_schedule_off">Turn off scheduled charging</string>
     <string name="charging_departure_off">Turn off scheduled departure</string>
@@ -205,7 +205,7 @@
     <string name="controls_vehicle">Vehicle</string>
     <string name="controls_locks">Doors locked</string>
     <string name="controls_autosecure">Close doors and lock</string>
-    <string name="controls_homelink">HomeLink</string>
+    <string name="controls_homelink" translatable="false">HomeLink</string>
     <string name="controls_homelink_desc">Opens your garage door using the car\'s location</string>
     <string name="controls_homelink_nearby">The car is near a HomeLink device</string>
     <string name="controls_remote_start">Remote start</string>
@@ -214,8 +214,8 @@
     <string name="controls_update_status">Status</string>
     <string name="controls_update_available">Update %1$s is ready to install</string>
     <string name="controls_update_ready">An update is ready to install</string>
-    <string name="controls_update_installing">Installing %1$d %%</string>
-    <string name="controls_update_downloading">Downloading %1$d %%</string>
+    <string name="controls_update_installing">Installing %1$d\u00A0%%</string>
+    <string name="controls_update_downloading">Downloading %1$d\u00A0%%</string>
     <string name="controls_update_wifi">Waiting for Wi-Fi to download</string>
     <string name="controls_update_scheduled">Installation scheduled</string>
     <string name="controls_update_none">No update waiting</string>
@@ -225,7 +225,7 @@
     <string name="controls_frunk_note">Closes by hand</string>
     <string name="controls_tonneau_stop">Stop tonneau</string>
     <string name="controls_sunroof_other">Other sunroof position</string>
-    <string name="controls_sunroof_percent">%1$d %% open</string>
+    <string name="controls_sunroof_percent">%1$d\u00A0%% open</string>
     <string name="controls_install_short">Install update</string>
     <string name="controls_cancel_short">Cancel installation</string>
     <string name="controls_ping_short">Test connection</string>
@@ -276,6 +276,7 @@
     <string name="keys_load">Load keys from the car</string>
     <string name="keys_add">Add a key</string>
     <string name="keys_add_desc">Paste another phone\'s public key to give it access</string>
+    <string name="keys_share_desc">Send it to a phone that has an owner key, so it can add this one</string>
     <string name="keys_remove_confirm">Remove this key from the car? Whoever holds it will lose access.</string>
     <string name="keys_export_private">Export private key</string>
     <string name="keys_export_warning">Anyone with this file can unlock and drive your car. Store it somewhere safe and never share it.</string>
@@ -350,6 +351,7 @@
     <string name="details_software">Software</string>
     <string name="details_load_all">Read everything from the car</string>
     <string name="details_updated">Updated %1$s</string>
+    <string name="details_updated_now">Updated just now</string>
     <string name="details_never">Not read yet</string>
     <string name="details_copy_coordinates">Copy coordinates</string>
 
@@ -424,4 +426,5 @@
     <string name="pin_title">Enter the 4-digit PIN</string>
     <string name="pin_label">PIN</string>
     <string name="pin_invalid">The PIN must be exactly 4 digits</string>
+    <string name="demo_car_name">Demo car</string>
 </resources>

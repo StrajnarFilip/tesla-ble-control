@@ -50,4 +50,12 @@ class FormattersTest {
         assertEquals("Sun, Wed", daysText(1 or 8))
         assertEquals("No days", daysText(0))
     }
+
+    @Test
+    fun scheduleDaysUseTheUiLanguageAndKeepSundayAsBitZero() {
+        assertEquals("dim., mer.", daysText(1 or 8, Locale.FRENCH))
+        assertEquals("Tous les jours", daysText(127, Locale.FRENCH, everyDay = "Tous les jours"))
+        assertEquals("Werktags", daysText(62, Locale.GERMAN, weekdays = "Werktags"))
+        assertEquals("Keine Tage", daysText(0, Locale.GERMAN, noDays = "Keine Tage"))
+    }
 }

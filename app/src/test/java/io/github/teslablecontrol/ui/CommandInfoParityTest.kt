@@ -33,7 +33,7 @@ class CommandInfoParityTest {
     @Test
     fun descriptionsAndSuccessTextsAreFilledIn() {
         CommandInfos.all.forEach {
-            assertTrue(it.id, it.title.isNotBlank() && it.description.isNotBlank() && it.successText.isNotBlank())
+            assertTrue(it.id, it.title != 0 && it.description != 0 && it.successText != 0)
         }
     }
 

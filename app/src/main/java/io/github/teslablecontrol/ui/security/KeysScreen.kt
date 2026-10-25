@@ -195,7 +195,7 @@ fun KeysScreen(viewModel: MainViewModel, navigator: Navigator) {
                                 val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, pem)
                                 context.startActivity(Intent.createChooser(send, resources.getString(R.string.keys_share_public)))
                             },
-                            note = stringResource(R.string.keys_add_desc),
+                            note = stringResource(R.string.keys_share_desc),
                             modifier = Modifier.inGroup(),
                         )
                         ButtonWithNote(
@@ -316,11 +316,11 @@ private fun java.io.InputStream.readAtMost(limit: Int): ByteArray {
 private fun roleLabel(role: Keys.Role): String = when (role) {
     Keys.Role.ROLE_OWNER -> stringResource(R.string.keys_role_owner)
     Keys.Role.ROLE_DRIVER -> stringResource(R.string.keys_role_driver)
-    Keys.Role.ROLE_FM -> "Fleet manager"
-    Keys.Role.ROLE_VEHICLE_MONITOR -> "Vehicle monitor"
-    Keys.Role.ROLE_CHARGING_MANAGER -> "Charging manager"
-    Keys.Role.ROLE_GUEST -> "Guest"
-    Keys.Role.ROLE_SERVICE -> "Service"
+    Keys.Role.ROLE_FM -> stringResource(R.string.label_fleet_manager)
+    Keys.Role.ROLE_VEHICLE_MONITOR -> stringResource(R.string.label_vehicle_monitor)
+    Keys.Role.ROLE_CHARGING_MANAGER -> stringResource(R.string.label_charging_manager)
+    Keys.Role.ROLE_GUEST -> stringResource(R.string.label_guest)
+    Keys.Role.ROLE_SERVICE -> stringResource(R.string.label_service)
     else -> stringResource(R.string.keys_role_other)
 }
 

@@ -271,6 +271,7 @@ fun MainTopBar(viewModel: MainViewModel, navigator: Navigator, title: String) {
     val settings by viewModel.settings.collectAsState()
     var menuOpen by remember { mutableStateOf(false) }
     val switchLabel = stringResource(R.string.action_switch_car)
+    val carName = if (settings?.demoMode == true) stringResource(R.string.demo_car_name) else profile?.name ?: title
     TopAppBar(
         title = {
             // Moved back by the button's own padding, so the name lines up with the page's text.
@@ -279,10 +280,10 @@ fun MainTopBar(viewModel: MainViewModel, navigator: Navigator, title: String) {
                 val switchable = (profiles?.size ?: 0) > 1 || settings?.demoMode == true
                 TextButton(
                     onClick = { if (switchable) menuOpen = true },
-                    modifier = Modifier.semantics { if (switchable) contentDescription = "${profile?.name ?: title}, $switchLabel" },
+                    modifier = Modifier.semantics { if (switchable) contentDescription = "${carName}, $switchLabel" },
                 ) {
                     Text(
-                        profile?.name ?: title,
+                        carName,
                         style = MaterialTheme.typography.titleLarge,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

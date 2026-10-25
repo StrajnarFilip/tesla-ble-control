@@ -28,6 +28,7 @@
     <string name="guide_name_label">Name in this app</string>
     <string name="guide_name_default">My car</string>
     <string name="guide_model_label">Model</string>
+    <string name="model_other">Other</string>
 
     <string name="guide_permissions_title">Allow Bluetooth</string>
     <string name="guide_permissions_body">Android will ask for two permissions.\n\n• Nearby devices lets the app find and connect to your car.\n\n• Location is required by Android for any Bluetooth scan. Choose “Precise”. The app only uses it to find your car.\n\nLocation also needs to be switched on the first time the app looks for your car.</string>
@@ -67,10 +68,10 @@
     <string name="guide_pair_step3">3. Right away, place the key card flat on the card reader and hold it still for a few seconds.</string>
     <string name="guide_pair_step4">The car\'s screen may not show anything. That\'s normal: this app notices the approval by itself.</string>
     <string name="guide_pair_where">Where the card reader is</string>
-    <string name="guide_pair_where_charger">Model 3 from 2024: on either side of the wireless phone charger.</string>
+    <string name="guide_pair_where_charger">Model 3 from 2024: on the wireless phone charger itself. Either of its two charging spots works.</string>
     <string name="guide_pair_where_console">Earlier Model 3, and Model Y: on the centre console, just behind the cup holders.</string>
     <string name="guide_pair_where_other">Model S, Model X and Cybertruck: if one spot doesn\'t react, try the other.</string>
-    <string name="guide_pair_picture_charger">A key card placed flat on one side of the wireless phone charger.</string>
+    <string name="guide_pair_picture_charger">A key card placed flat on one of the two spots of the wireless phone charger.</string>
     <string name="guide_pair_picture_console">A key card placed on the centre console just behind the cup holders.</string>
     <string name="guide_pair_send">Send pairing request</string>
     <string name="guide_pair_waiting">Waiting for the key card… %1$s</string>

@@ -80,6 +80,8 @@ import io.github.teslablecontrol.ui.components.TeslaButton
 import io.github.teslablecontrol.ui.components.TeslaSlider
 import io.github.teslablecontrol.ui.format.FailureAction
 import io.github.teslablecontrol.ui.format.Units
+import io.github.teslablecontrol.ui.format.currentLocale
+import io.github.teslablecontrol.ui.format.durationText
 import io.github.teslablecontrol.ui.format.failureAction
 import io.github.teslablecontrol.ui.format.failureMessage
 import io.github.teslablecontrol.ui.format.temperatureValue
@@ -92,7 +94,7 @@ import kotlinx.coroutines.delay
 fun CommandFormScreen(viewModel: MainViewModel, navigator: Navigator, commandId: String) {
     val spec = CommandCatalog.find(commandId)
     val info = CommandInfos.get(commandId)
-    BackScaffold(info.title, navigator) { modifier ->
+    BackScaffold(stringResource(info.title), navigator) { modifier ->
         if (spec == null) {
             Text(stringResource(R.string.commands_unknown), modifier = modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
         } else {
@@ -142,7 +144,7 @@ private fun CommandForm(viewModel: MainViewModel, navigator: Navigator, spec: Co
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(Modifier.widthIn(max = 720.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(info.description, style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(info.description), style = MaterialTheme.typography.bodyLarge)
             Text(
                 stringResource(if (spec.requirement == SessionRequirement.INFOTAINMENT) R.string.commands_wakes_car else R.string.commands_works_asleep),
                 style = MaterialTheme.typography.bodyMedium,
@@ -180,9 +182,9 @@ private fun CommandForm(viewModel: MainViewModel, navigator: Navigator, spec: Co
             val busy = running == spec.id
             // The command's own button, in the car's confirm style.
             TeslaButton(
-                label = info.title,
+                label = stringResource(info.title),
                 onClick = {
-                    problem = validate(spec, values)
+                    problem = validate(resources, spec, values)
                     if (problem == null) {
                         outcome = null
                         viewModel.send(spec.id, values) { outcome = it }
@@ -204,7 +206,7 @@ private fun CommandForm(viewModel: MainViewModel, navigator: Navigator, spec: Co
             outcome?.let { result ->
                 ResultSection(
                     result,
-                    successText = info.successText,
+                    successText = stringResource(info.successText),
                     failureText = (result as? CommandOutcome.Failure)?.let { failureMessage(context, it) },
                     onAction = { action ->
                         when (action) {
@@ -304,21 +306,21 @@ private fun initialValues(spec: CommandSpec, snapshot: VehicleSnapshot, units: U
 }
 
 /** Checks the values by building the command; returns a message naming the field, or null. */
-private fun validate(spec: CommandSpec, values: Map<String, String>): String? {
+private fun validate(resources: android.content.res.Resources, spec: CommandSpec, values: Map<String, String>): String? {
     val error = runCatching { spec.build(values) }.exceptionOrNull() ?: return null
-    val message = error.message ?: return "Check the values"
+    val message = error.message ?: return resources.getString(R.string.label_check_the_values)
     val missing = Regex("^missing ([A-Z_]+)$").find(message)
-    if (missing != null) return "${ParamLabels.label(missing.groupValues[1])}: please fill this in"
+    if (missing != null) return resources.getString(R.string.validation_required, ParamLabels.label(resources, missing.groupValues[1]))
     val named = Regex("^([A-Z_]+) (.*)$").find(message)
     if (named != null && spec.params.any { it.name == named.groupValues[1] }) {
-        return "${ParamLabels.label(named.groupValues[1])}: ${named.groupValues[2]}"
+        return resources.getString(R.string.validation_value, ParamLabels.label(resources, named.groupValues[1]))
     }
-    return message
+    return resources.getString(R.string.label_check_the_values)
 }
 
 @Composable
 private fun ParamField(param: ParamSpec, value: String?, units: Units, onChange: (String?) -> Unit) {
-    val label = ParamLabels.label(param.name).let { if (!param.required && param.default == null) stringResource(R.string.commands_optional, it) else it }
+    val label = ParamLabels.label(LocalResources.current, param.name).let { if (!param.required && param.default == null) stringResource(R.string.commands_optional, it) else it }
     when (val type = param.type) {
         ParamType.OnOff -> Labelled(label) {
             TeslaSlider(
@@ -399,14 +401,14 @@ private fun ParamField(param: ParamSpec, value: String?, units: Units, onChange:
         ParamType.Days -> Labelled(label) { DaysField(value, onChange) }
         ParamType.Duration -> Labelled(label) {
             OptionChips(
-                options = listOf("0s" to "Now", "10m" to "10 min", "30m" to "30 min", "1h" to "1 hour", "2h" to "2 hours"),
+                options = listOf("0s" to stringResource(R.string.label_now), "10m" to durationText(10), "30m" to durationText(30), "1h" to stringResource(R.string.label_1_hour), "2h" to stringResource(R.string.label_2_hours)),
                 selected = value,
                 onSelect = { onChange(it) },
             )
             OutlinedTextField(
                 value = value.orEmpty(),
                 onValueChange = { onChange(it.trim()) },
-                label = { Text("Other (for example 1h30m)") },
+                label = { Text(stringResource(R.string.label_other_for_example_1h30m)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -481,34 +483,39 @@ private fun TimeField(label: String, value: String?, onChange: (String?) -> Unit
     }
 }
 
-private val DAY_NAMES = listOf("SUN" to "Sun", "MON" to "Mon", "TUE" to "Tue", "WED" to "Wed", "THU" to "Thu", "FRI" to "Fri", "SAT" to "Sat")
+private val DAY_IDS = listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT")
 private val WEEKDAYS = setOf("MON", "TUE", "WED", "THU", "FRI")
 
 /** Day toggles, kept as the catalog's comma-separated names. */
 @Composable
 private fun DaysField(value: String?, onChange: (String?) -> Unit) {
+    val locale = currentLocale()
+    val dayNames = java.text.DateFormatSymbols(locale).shortWeekdays
+    // The week starts where it does in the UI language's region: Monday in most of Europe.
+    val firstDay = java.util.Calendar.getInstance(locale).firstDayOfWeek - java.util.Calendar.SUNDAY
     val selected: Set<String> = value.orEmpty().split(",").map { it.trim().uppercase() }.flatMap {
         when (it) {
-            "ALL" -> DAY_NAMES.map { d -> d.first }
+            "ALL" -> DAY_IDS
             "WEEKDAYS" -> WEEKDAYS.toList()
             "TUES" -> listOf("TUE")
             "THURS" -> listOf("THU")
             else -> listOf(it.take(3))
         }
     }.toSet()
-    fun save(days: Set<String>) = onChange(DAY_NAMES.map { it.first }.filter { it in days }.joinToString(",").ifEmpty { null })
+    fun save(days: Set<String>) = onChange(DAY_IDS.filter { it in days }.joinToString(",").ifEmpty { null })
 
     TeslaSlider(
         options = listOf("all" to stringResource(R.string.commands_days_all), "weekdays" to stringResource(R.string.commands_days_weekdays)),
         selected = when (selected) {
-            DAY_NAMES.map { it.first }.toSet() -> "all"
+            DAY_IDS.toSet() -> "all"
             WEEKDAYS -> "weekdays"
             else -> null
         },
-        onSelect = { if (it == "all") save(DAY_NAMES.map { d -> d.first }.toSet()) else save(WEEKDAYS) },
+        onSelect = { if (it == "all") save(DAY_IDS.toSet()) else save(WEEKDAYS) },
     )
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        DAY_NAMES.forEach { (id, name) ->
+        DAY_IDS.indices.map { (it + firstDay) % DAY_IDS.size }.forEach { index ->
+            val id = DAY_IDS[index]
             val on = id in selected
             Surface(
                 shape = MaterialTheme.shapes.medium,
@@ -524,7 +531,7 @@ private fun DaysField(value: String?, onChange: (String?) -> Unit) {
                         Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                     }
-                    Text(name, style = MaterialTheme.typography.labelLarge)
+                    Text(dayNames[index + 1], style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -534,32 +541,33 @@ private fun DaysField(value: String?, onChange: (String?) -> Unit) {
 private fun formatNumber(value: Double): String = if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
 
 /** Readable names for the catalog's option ids. */
+@Composable
 private fun choiceLabel(param: String, option: String): String = when (param) {
     "SEAT" -> mapOf(
-        "front-left" to "Driver", "front-right" to "Passenger", "2nd-row-left" to "Rear left", "2nd-row-left-back" to "Rear left backrest",
-        "2nd-row-center" to "Rear centre", "2nd-row-right" to "Rear right", "2nd-row-right-back" to "Rear right backrest",
-        "3rd-row-left" to "Third row left", "3rd-row-right" to "Third row right",
+        "front-left" to stringResource(R.string.keys_role_driver), "front-right" to stringResource(R.string.climate_passenger), "2nd-row-left" to stringResource(R.string.label_rear_left), "2nd-row-left-back" to stringResource(R.string.label_rear_left_backrest),
+        "2nd-row-center" to stringResource(R.string.label_rear_centre), "2nd-row-right" to stringResource(R.string.label_rear_right), "2nd-row-right-back" to stringResource(R.string.label_rear_right_backrest),
+        "3rd-row-left" to stringResource(R.string.label_third_row_left), "3rd-row-right" to stringResource(R.string.label_third_row_right),
     )[option]
-    "LEVEL" -> mapOf("off" to "Off", "low" to "Low", "medium" to "Medium", "high" to "High")[option]
-    "MODE" -> mapOf("off" to "Off", "on" to "Keep on", "dog" to "Dog mode", "camp" to "Camp mode")[option]
+    "LEVEL" -> mapOf("off" to stringResource(R.string.charging_mode_off), "low" to stringResource(R.string.level_low), "medium" to stringResource(R.string.level_medium), "high" to stringResource(R.string.level_high))[option]
+    "MODE" -> mapOf("off" to stringResource(R.string.charging_mode_off), "on" to stringResource(R.string.label_keep_on), "dog" to stringResource(R.string.label_dog_mode), "camp" to stringResource(R.string.label_camp_mode))[option]
     "ROLE" -> mapOf(
-        "owner" to "Owner", "driver" to "Driver", "fm" to "Fleet manager", "vehicle_monitor" to "Vehicle monitor",
-        "charging_manager" to "Charging manager",
+        "owner" to stringResource(R.string.keys_role_owner), "driver" to stringResource(R.string.keys_role_driver), "fm" to stringResource(R.string.label_fleet_manager), "vehicle_monitor" to stringResource(R.string.label_vehicle_monitor),
+        "charging_manager" to stringResource(R.string.label_charging_manager),
     )[option]
-    "FORM_FACTOR" -> mapOf("nfc_card" to "Key card", "ios_device" to "iPhone", "android_device" to "Android phone", "cloud_key" to "Cloud key")[option]
-    "DOMAIN" -> mapOf("vcsec" to "Locks and doors", "infotainment" to "Infotainment (climate, charging, media)")[option]
-    "POSITIONS" -> mapOf("L" to "Driver side", "R" to "Passenger side", "LR" to "Both")[option]
-    "PRECONDITIONING", "OFF_PEAK" -> mapOf("off" to "Off", "all" to "Every day", "weekdays" to "Weekdays")[option]
-    "REPEAT" -> mapOf("weekly" to "Every week", "once" to "Once")[option]
-    "TYPE" -> mapOf("home" to "All at home", "work" to "All at work", "other" to "All other places", "id" to "One, by ID")[option]
+    "FORM_FACTOR" -> mapOf("nfc_card" to stringResource(R.string.keys_form_card), "ios_device" to "iPhone", "android_device" to stringResource(R.string.keys_form_android), "cloud_key" to stringResource(R.string.keys_form_cloud))[option]
+    "DOMAIN" -> mapOf("vcsec" to stringResource(R.string.label_locks_and_doors), "infotainment" to stringResource(R.string.label_infotainment_climate_charging_media))[option]
+    "POSITIONS" -> mapOf("L" to stringResource(R.string.label_driver_side), "R" to stringResource(R.string.label_passenger_side), "LR" to stringResource(R.string.label_both))[option]
+    "PRECONDITIONING", "OFF_PEAK" -> mapOf("off" to stringResource(R.string.charging_mode_off), "all" to stringResource(R.string.commands_days_all), "weekdays" to stringResource(R.string.commands_days_weekdays))[option]
+    "REPEAT" -> mapOf("weekly" to stringResource(R.string.label_every_week), "once" to stringResource(R.string.label_once))[option]
+    "TYPE" -> mapOf("home" to stringResource(R.string.label_all_at_home), "work" to stringResource(R.string.label_all_at_work), "other" to stringResource(R.string.label_all_other_places), "id" to stringResource(R.string.label_one_by_id))[option]
     "SETTING" -> mapOf(
-        "speed-limit" to "Speed limit", "acceleration" to "Chill acceleration", "safety-features" to "Safety features",
-        "curfew" to "Curfew", "browser-blocked" to "Block browser", "theater-blocked" to "Block Theater", "arcade-blocked" to "Block Arcade",
+        "speed-limit" to stringResource(R.string.security_speed_limit), "acceleration" to stringResource(R.string.label_chill_acceleration), "safety-features" to stringResource(R.string.label_safety_features),
+        "curfew" to stringResource(R.string.label_curfew), "browser-blocked" to stringResource(R.string.label_block_browser), "theater-blocked" to stringResource(R.string.label_block_theater), "arcade-blocked" to stringResource(R.string.label_block_arcade),
     )[option]
     "CATEGORY" -> mapOf(
-        "charge" to "Charging", "climate" to "Climate", "drive" to "Driving", "location" to "Location", "closures" to "Doors and windows",
-        "charge-schedule" to "Charge schedules", "precondition-schedule" to "Precondition schedules", "tire-pressure" to "Tyre pressure",
-        "media" to "Media", "media-detail" to "Media details", "software-update" to "Software update", "parental-controls" to "Parental controls",
+        "charge" to stringResource(R.string.charging_state_charging), "climate" to stringResource(R.string.climate_title), "drive" to stringResource(R.string.details_drive), "location" to stringResource(R.string.details_location), "closures" to stringResource(R.string.label_doors_and_windows),
+        "charge-schedule" to stringResource(R.string.charging_schedules), "precondition-schedule" to stringResource(R.string.climate_schedules), "tire-pressure" to stringResource(R.string.details_tires),
+        "media" to stringResource(R.string.controls_media), "media-detail" to stringResource(R.string.label_media_details), "software-update" to stringResource(R.string.controls_software), "parental-controls" to stringResource(R.string.security_parental),
     )[option]
     else -> null
 } ?: option.replace('-', ' ').replace('_', ' ').replaceFirstChar { it.uppercase() }

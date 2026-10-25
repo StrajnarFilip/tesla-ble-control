@@ -55,6 +55,7 @@ import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.SectionHeader
 import io.github.teslablecontrol.ui.components.ToggleRow
 import io.github.teslablecontrol.ui.components.inGroup
+import io.github.teslablecontrol.ui.format.carModelName
 
 @Composable
 fun SettingsScreen(viewModel: MainViewModel, navigator: Navigator) {
@@ -292,7 +293,7 @@ private fun CarRow(car: VehicleProfile, selected: Boolean, onSelect: () -> Unit)
         Column(Modifier.weight(1f)) {
             Text(car.name, style = MaterialTheme.typography.bodyLarge)
             Text(
-                "${car.model.label} · ${stringResource(if (car.paired) R.string.settings_car_paired else R.string.settings_car_not_paired)}",
+                "${carModelName(car.model)} · ${stringResource(if (car.paired) R.string.settings_car_paired else R.string.settings_car_not_paired)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -111,7 +111,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         val info = CommandInfos.get(commandId)
         if (info.risky && !confirmed && app.settings.current.confirmRisky) {
-            _pending.value = PendingCommand(commandId, args, info.title, info.description, onResult)
+            _pending.value = PendingCommand(commandId, args, getApplication<Application>().getString(info.title), getApplication<Application>().getString(info.description), onResult)
             return
         }
         run(commandId, args, onResult)
@@ -168,7 +168,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val quiet = outcome.result is CommandResult.State || outcome.result is CommandResult.BodyStatus ||
                     outcome.result is CommandResult.KeyList
                 // The buttons show the result, so confirmations are optional.
-                if (!quiet && app.settings.current.commandMessages) _messages.tryEmit(UiMessage(CommandInfos.get(commandId).successText))
+                if (!quiet && app.settings.current.commandMessages) _messages.tryEmit(UiMessage(context.getString(CommandInfos.get(commandId).successText)))
             }
             is CommandOutcome.Failure -> _messages.tryEmit(
                 UiMessage(
@@ -274,17 +274,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val imported = runCatching { withContext(Dispatchers.IO) { app.keys.importPem(pem) } }
             if (imported.isFailure) {
-                _messages.tryEmit(UiMessage("That isn't a usable private key: ${imported.exceptionOrNull()?.message}", isError = true))
+                _messages.tryEmit(UiMessage(getApplication<Application>().getString(R.string.keys_import_invalid, imported.exceptionOrNull()?.message), isError = true))
                 return@launch
             }
             forgetPairing()
-            _messages.tryEmit(UiMessage("Key imported. Checking it with the car…"))
+            _messages.tryEmit(UiMessage(getApplication<Application>().getString(R.string.keys_import_checking)))
             recheckPairing { paired ->
                 _messages.tryEmit(
                     when (paired) {
-                        true -> UiMessage("The car accepts the imported key")
+                        true -> UiMessage(getApplication<Application>().getString(R.string.keys_import_accepted))
                         false -> UiMessage(getApplication<Application>().getString(R.string.failure_not_paired), FailureAction.PAIR, isError = true)
-                        null -> UiMessage("Couldn't reach the car to check the key. It's checked again on the next command.")
+                        null -> UiMessage(getApplication<Application>().getString(R.string.keys_import_check_unavailable))
                     },
                 )
             }
@@ -296,7 +296,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { app.keys.replaceWithNewKey() }
             forgetPairing()
-            _messages.tryEmit(UiMessage("New key created. Pair this phone with your car again.", FailureAction.PAIR))
+            _messages.tryEmit(UiMessage(getApplication<Application>().getString(R.string.keys_new_created), FailureAction.PAIR))
         }
     }
 

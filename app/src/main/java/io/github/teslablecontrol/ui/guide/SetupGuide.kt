@@ -92,6 +92,7 @@ import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.StableText
 import io.github.teslablecontrol.ui.components.TeslaButton
 import io.github.teslablecontrol.ui.components.ToggleRow
+import io.github.teslablecontrol.ui.format.carModelName
 import io.github.teslablecontrol.ui.format.failureMessage
 import io.github.teslablecontrol.ui.theme.LocalStatusColors
 import kotlin.time.Duration.Companion.seconds
@@ -324,7 +325,7 @@ private fun VinStep(
         modifier = Modifier.fillMaxWidth(),
     )
     Text(stringResource(R.string.guide_model_label), style = MaterialTheme.typography.titleSmall)
-    OptionChips(CarModel.entries.map { it to it.label }, model, onModel)
+    OptionChips(CarModel.entries.map { it to carModelName(it) }, model, onModel)
 }
 
 @Composable

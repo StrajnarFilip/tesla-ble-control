@@ -38,8 +38,9 @@ import io.github.teslablecontrol.ui.components.SliderControl
 import io.github.teslablecontrol.ui.components.TeslaButton
 import io.github.teslablecontrol.ui.components.ToggleRow
 import io.github.teslablecontrol.ui.format.Units
+import io.github.teslablecontrol.ui.format.currentLocale
 import io.github.teslablecontrol.ui.format.celsiusFrom
-import io.github.teslablecontrol.ui.format.daysText
+import io.github.teslablecontrol.ui.format.scheduleDaysText
 import io.github.teslablecontrol.ui.format.minutesToClock
 import io.github.teslablecontrol.ui.format.temperature
 import io.github.teslablecontrol.ui.format.temperatureValue
@@ -54,7 +55,7 @@ private val CLIMATE_CATEGORIES = listOf(StateCategory.CLIMATE, StateCategory.PRE
  */
 private class Seat(
     val id: String,
-    val label: String,
+    val label: Int,
     val read: (Vehicle.ClimateState) -> Int?,
     val side: Int,
     val rearOnly: Boolean = false,
@@ -63,15 +64,15 @@ private class Seat(
 )
 
 private val SEATS = listOf(
-    Seat("front-left", "Front left", { c -> c.takeIf { it.hasSeatHeaterLeft() }?.seatHeaterLeft }, side = -1),
-    Seat("front-right", "Front right", { c -> c.takeIf { it.hasSeatHeaterRight() }?.seatHeaterRight }, side = 1),
-    Seat("2nd-row-left", "Rear left", { c -> c.takeIf { it.hasSeatHeaterRearLeft() }?.seatHeaterRearLeft }, side = -1, rearOnly = true),
-    Seat("2nd-row-center", "Rear centre", { c -> c.takeIf { it.hasSeatHeaterRearCenter() }?.seatHeaterRearCenter }, side = 0, rearOnly = true),
-    Seat("2nd-row-right", "Rear right", { c -> c.takeIf { it.hasSeatHeaterRearRight() }?.seatHeaterRearRight }, side = 1, rearOnly = true),
-    Seat("2nd-row-left-back", "Rear left backrest", { c -> c.takeIf { it.hasSeatHeaterRearLeftBack() }?.seatHeaterRearLeftBack }, side = -1, back = true),
-    Seat("2nd-row-right-back", "Rear right backrest", { c -> c.takeIf { it.hasSeatHeaterRearRightBack() }?.seatHeaterRearRightBack }, side = 1, back = true),
-    Seat("3rd-row-left", "Third row left", { c -> c.takeIf { it.hasSeatHeaterThirdRowLeft() }?.seatHeaterThirdRowLeft }, side = -1, thirdRow = true),
-    Seat("3rd-row-right", "Third row right", { c -> c.takeIf { it.hasSeatHeaterThirdRowRight() }?.seatHeaterThirdRowRight }, side = 1, thirdRow = true),
+    Seat("front-left", R.string.label_front_left, { c -> c.takeIf { it.hasSeatHeaterLeft() }?.seatHeaterLeft }, side = -1),
+    Seat("front-right", R.string.label_front_right, { c -> c.takeIf { it.hasSeatHeaterRight() }?.seatHeaterRight }, side = 1),
+    Seat("2nd-row-left", R.string.label_rear_left, { c -> c.takeIf { it.hasSeatHeaterRearLeft() }?.seatHeaterRearLeft }, side = -1, rearOnly = true),
+    Seat("2nd-row-center", R.string.label_rear_centre, { c -> c.takeIf { it.hasSeatHeaterRearCenter() }?.seatHeaterRearCenter }, side = 0, rearOnly = true),
+    Seat("2nd-row-right", R.string.label_rear_right, { c -> c.takeIf { it.hasSeatHeaterRearRight() }?.seatHeaterRearRight }, side = 1, rearOnly = true),
+    Seat("2nd-row-left-back", R.string.label_rear_left_backrest, { c -> c.takeIf { it.hasSeatHeaterRearLeftBack() }?.seatHeaterRearLeftBack }, side = -1, back = true),
+    Seat("2nd-row-right-back", R.string.label_rear_right_backrest, { c -> c.takeIf { it.hasSeatHeaterRearRightBack() }?.seatHeaterRearRightBack }, side = 1, back = true),
+    Seat("3rd-row-left", R.string.label_third_row_left, { c -> c.takeIf { it.hasSeatHeaterThirdRowLeft() }?.seatHeaterThirdRowLeft }, side = -1, thirdRow = true),
+    Seat("3rd-row-right", R.string.label_third_row_right, { c -> c.takeIf { it.hasSeatHeaterThirdRowRight() }?.seatHeaterThirdRowRight }, side = 1, thirdRow = true),
 )
 
 /** The front seats' cooling fans: the seat, and how to read its fan level from the car. */
@@ -94,14 +95,15 @@ private fun Vehicle.ClimateState.cooledSeats() =
 private val RIGHT_HAND_DRIVE = setOf("GB", "IE", "AU", "NZ", "JP", "HK", "MO", "SG", "MY", "TH", "IN", "CY", "MT")
 
 /** Whose seat this is, so "front left" reads as "Driver". */
+@Composable
 private fun Seat.note(rightHandDrive: Boolean): String {
     val driverSide = side == (if (rightHandDrive) 1 else -1)
     return when {
-        side == 0 -> "Middle of the back seat"
-        thirdRow -> if (driverSide) "Third row, driver's side" else "Third row, passenger's side"
-        back -> if (driverSide) "Backrest behind the driver" else "Backrest behind the front passenger"
-        rearOnly -> if (driverSide) "Behind the driver" else "Behind the front passenger"
-        else -> if (driverSide) "Driver" else "Front passenger"
+        side == 0 -> stringResource(R.string.label_middle_of_the_back_seat)
+        thirdRow -> if (driverSide) stringResource(R.string.label_third_row_driver_s_side) else stringResource(R.string.label_third_row_passenger_s_side)
+        back -> if (driverSide) stringResource(R.string.label_backrest_behind_the_driver) else stringResource(R.string.label_backrest_behind_the_front_passenger)
+        rearOnly -> if (driverSide) stringResource(R.string.label_behind_the_driver) else stringResource(R.string.label_behind_the_front_passenger)
+        else -> if (driverSide) stringResource(R.string.keys_role_driver) else stringResource(R.string.label_front_passenger)
     }
 }
 
@@ -121,11 +123,11 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
     var sendingSeat by remember { mutableStateOf<String?>(null) }
     // Likewise the side whose automatic seat climate is being set ("L" or "R").
     var sendingAutoSeat by remember { mutableStateOf<String?>(null) }
-    val rightHandDrive = Locale.getDefault().country in RIGHT_HAND_DRIVE
+    val rightHandDrive = currentLocale().country in RIGHT_HAND_DRIVE
 
     @Composable
     fun SeatLevelRow(seat: Seat, level: Int?, command: String) = ChoiceRow(
-        title = seat.label,
+        title = stringResource(seat.label),
         description = seat.note(rightHandDrive),
         options = levelOptions,
         selected = level,
@@ -218,7 +220,7 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
             ChoiceRow(
                 title = stringResource(R.string.climate_keeper),
                 // Short, so four fit side by side; the title says what they keep.
-                options = listOf("off" to "Off", "on" to "On", "dog" to "Dog", "camp" to "Camp"),
+                options = listOf("off" to stringResource(R.string.charging_mode_off), "on" to stringResource(R.string.word_on), "dog" to stringResource(R.string.label_dog), "camp" to stringResource(R.string.label_camp)),
                 // The car leaves the mode out when climate keeping is off.
                 selected = climate?.let {
                     when (it.climateKeeperMode.typeCase) {
@@ -233,7 +235,7 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
             )
             ChoiceRow(
                 title = stringResource(R.string.climate_cop),
-                options = listOf("off" to "Off", "on" to "On", "fan" to "Fan only"),
+                options = listOf("off" to stringResource(R.string.charging_mode_off), "on" to stringResource(R.string.word_on), "fan" to stringResource(R.string.label_fan_only)),
                 selected = climate?.takeIf { it.hasCabinOverheatProtection() }?.cabinOverheatProtection?.let {
                     when (it) {
                         Vehicle.ClimateState.CabinOverheatProtection_E.CabinOverheatProtectionOn -> "on"
@@ -274,7 +276,7 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                 )
             }
             ToggleRow(
-                title = stringResource(R.string.climate_auto_seat) + " (driver)",
+                title = stringResource(R.string.climate_auto_seat) + " (" + stringResource(R.string.climate_driver) + ")",
                 checked = climate?.takeIf { it.hasAutoSeatClimateLeft() }?.autoSeatClimateLeft,
                 busy = running == "auto-seat-and-climate" && sendingAutoSeat == "L",
                 onCheckedChange = { on ->
@@ -283,7 +285,7 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                 },
             )
             ToggleRow(
-                title = stringResource(R.string.climate_auto_seat) + " (passenger)",
+                title = stringResource(R.string.climate_auto_seat) + " (" + stringResource(R.string.climate_passenger) + ")",
                 checked = climate?.takeIf { it.hasAutoSeatClimateRight() }?.autoSeatClimateRight,
                 busy = running == "auto-seat-and-climate" && sendingAutoSeat == "R",
                 onCheckedChange = { on ->
@@ -295,11 +297,11 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
 
         SectionHeader(stringResource(R.string.climate_schedules))
         // Actions first: adding or removing schedules changes only the list below them.
-        TeslaButton("Add precondition schedule", { navigator.to(CommandRoute("precondition-schedule-add")) }, Modifier.fillMaxWidth())
+        TeslaButton(stringResource(R.string.command_precondition_schedule_add_title), { navigator.to(CommandRoute("precondition-schedule-add")) }, Modifier.fillMaxWidth())
         ButtonWithNote(
-            label = "Scheduled departure",
+            label = stringResource(R.string.charging_departure),
             onClick = { navigator.to(CommandRoute("scheduled-departure")) },
-            note = "Precondition and charge to be ready at a time",
+            note = stringResource(R.string.climate_departure_description),
         )
         SectionGroup {
             val schedules = state.snapshot.preconditionSchedules?.preconditionSchedulesList.orEmpty()
@@ -313,8 +315,8 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
             }
             schedules.forEach { schedule ->
                 ItemRow(
-                    title = "${minutesToClock(schedule.preconditionTime)} · ${daysText(schedule.daysOfWeek)}",
-                    description = (if (schedule.enabled) "Enabled" else "Disabled") + if (schedule.oneTime) " · once" else "",
+                    title = "${minutesToClock(schedule.preconditionTime)} · ${scheduleDaysText(schedule.daysOfWeek)}",
+                    description = (if (schedule.enabled) stringResource(R.string.param_enabled) else stringResource(R.string.label_disabled)) + if (schedule.oneTime) " · " + stringResource(R.string.label_once) else "",
                     actionLabel = stringResource(R.string.action_remove),
                     onAction = { viewModel.send("precondition-schedule-remove", mapOf("TYPE" to "id", "ID" to schedule.id.toString())) },
                 )

@@ -54,8 +54,11 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import io.github.teslablecontrol.R
 import kotlin.math.abs
@@ -71,6 +74,77 @@ private val PILL_RADIUS = 5.dp
 
 /** The border, then a hairline gap around the chosen option. */
 private val INSET = 2.dp
+private val LABEL_HORIZONTAL_PADDING = 6.dp
+
+@Composable
+private fun sliderLabelStyle() = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, lineHeight = 20.sp)
+
+/** A label's cell width on one line, and the least it can take without breaking a word. */
+internal class LabelWidth(val line: Dp, val word: Dp)
+
+/** The cell widths each label needs, in either weight. */
+@Composable
+private fun labelCellWidths(labels: List<String>): List<LabelWidth> {
+    val measurer = rememberTextMeasurer()
+    val style = sliderLabelStyle()
+    val density = LocalDensity.current
+    fun cell(text: String): Dp {
+        val width = listOf(style, style.copy(fontWeight = FontWeight.SemiBold)).maxOf { weight ->
+            measurer.measure(AnnotatedString(text), style = weight, softWrap = false).size.width
+        }
+        // Cells round to whole pixels independently; leave a little space beyond the measured
+        // text so rounding cannot push the final letter onto a second line.
+        return with(density) { width.toDp() } + LABEL_HORIZONTAL_PADDING * 2 + 2.dp
+    }
+    return labels.map { label -> LabelWidth(cell(label), label.split(' ').maxOf(::cell)) }
+}
+
+/** Width needed for equal cells without breaking a translated label in the middle of a word. */
+@Composable
+internal fun minimumSliderWidth(labels: List<String>, optionCount: Int): Dp =
+    labelCellWidths(labels).maxOf { it.line } * optionCount + INSET * 2
+
+private fun List<Dp>.total() = fold(0.dp) { sum, width -> sum + width }
+
+/**
+ * How the options share a [track] this wide: equally when every label fits that way, as on the car.
+ * Otherwise each option gets the width its label needs on one line and they share what is left
+ * equally. When even that is too wide, each keeps room for its longest word and the rest goes to the
+ * labels that wrap, by how much they lack, so no translated word is ever split.
+ */
+internal fun cellWeights(needed: List<LabelWidth>, track: Dp): List<Float> {
+    val lines = needed.map { it.line }
+    if (lines.all { it * needed.size <= track }) return needed.map { 1f }
+    if (lines.total() <= track) {
+        val spare = (track - lines.total()) / needed.size
+        return lines.map { (it + spare).value }
+    }
+    val words = needed.map { it.word }
+    if (words.total() >= track) return words.map { it.value }
+    val lacking = needed.map { it.line - it.word }
+    return words.zip(lacking) { word, lack -> (word + (track - words.total()) * (lack / lacking.total())).value }
+}
+
+/** Where each cell starts across [span], and where the last one ends: one more edge than cells. */
+private fun cellEdges(weights: List<Float>, span: Float): List<Float> {
+    val total = weights.sum()
+    return weights.runningFold(0f) { start, weight -> start + span * weight / total }
+}
+
+/** The left and right of a block at option position [at], which may lie between two options. */
+private fun blockBounds(edges: List<Float>, at: Float): Pair<Float, Float> {
+    val index = at.toInt().coerceIn(0, edges.size - 2)
+    val fraction = at - index
+    fun lerp(from: Float, to: Float) = from + (to - from) * fraction
+    val next = (index + 2).coerceAtMost(edges.size - 1)
+    return lerp(edges[index], edges[index + 1]) to lerp(edges[index + 1], edges[next])
+}
+
+/** The option position whose block starts at [x]; whole numbers are the options themselves. */
+private fun positionAt(edges: List<Float>, x: Float): Float {
+    val index = (0 until edges.size - 1).lastOrNull { edges[it] <= x } ?: 0
+    return index + (x - edges[index]) / (edges[index + 1] - edges[index])
+}
 
 /** How long a new choice is shown after its command if the car hasn't reported it yet. */
 private const val CONFIRM_WAIT_MILLIS = 3000L
@@ -168,25 +242,30 @@ fun <T> TeslaSlider(
         null
     }
 
-    val labelStyle = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, lineHeight = 20.sp)
+    val labelStyle = sliderLabelStyle()
     val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+    val needed = labelCellWidths(options.map { it.second })
+    val preferredWidth = maxOf(OPTION_WIDTH * fontScale, needed.maxOf { it.line }) * count + INSET * 2
     BoxWithConstraints(modifier.fillMaxWidth()) {
-        val width = minOf(maxWidth, OPTION_WIDTH * fontScale * count + INSET * 2)
+        val width = minOf(maxWidth, preferredWidth)
+        // As fractions of the track: Row sizes its height from whole pixels per unit of weight, so
+        // weights in dp (about 1.75 px each) would round to 2 px and wrongly fit two-line labels on one.
+        val weights = cellWeights(needed, width - INSET * 2).let { w -> w.map { it / w.sum() } }
         Box(
             Modifier
                 .width(width)
                 .alpha(if (enabled) 1f else 0.45f)
                 .border(1.dp, colors.outlineVariant, TRACK_SHAPE)
-                .pointerInput(count, interactive) {
+                .pointerInput(weights, interactive) {
                     if (!interactive) return@pointerInput
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         val inset = INSET.toPx()
-                        val cell = (size.width - 2 * inset) / count
-                        val pressed = ((down.position.x - inset) / cell).toInt().coerceIn(0, count - 1)
+                        val edges = cellEdges(weights, size.width - 2 * inset)
+                        val pressed = positionAt(edges, down.position.x - inset).toInt().coerceIn(0, count - 1)
                         val from = currentShown
                         // Holding the block keeps the finger where it took it; elsewhere it centres under the finger.
-                        val grab = if (from == pressed) down.position.x - inset - pressed * cell else cell / 2
+                        val grab = if (from == pressed) down.position.x - inset - edges[pressed] else (edges[pressed + 1] - edges[pressed]) / 2
                         var detent = from ?: pressed
                         var dragged: Float? = null
                         while (true) {
@@ -203,7 +282,7 @@ fun <T> TeslaSlider(
                                 if (abs(moved.x) <= viewConfiguration.touchSlop) continue
                             }
                             change.consume()
-                            val at = ((change.position.x - inset - grab) / cell).coerceIn(0f, count - 1f)
+                            val at = positionAt(edges, change.position.x - inset - grab).coerceIn(0f, count - 1f)
                             dragged = at
                             dragPosition = at
                             if (at.roundToInt() != detent) {
@@ -222,7 +301,7 @@ fun <T> TeslaSlider(
                 options.forEachIndexed { index, (_, label) ->
                     Box(
                         Modifier
-                            .weight(1f)
+                            .weight(weights[index])
                             .fillMaxHeight()
                             .semantics(mergeDescendants = true) {
                                 role = Role.RadioButton
@@ -241,7 +320,7 @@ fun <T> TeslaSlider(
                             style = labelStyle,
                             color = colors.onSurfaceVariant,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = LABEL_HORIZONTAL_PADDING, vertical = 8.dp),
                         )
                     }
                 }
@@ -253,8 +332,8 @@ fun <T> TeslaSlider(
                     .clearAndSetSemantics {}
                     .drawWithContent {
                         val at = dragPosition ?: position.value.takeIf { blockShown && shown != null } ?: return@drawWithContent
-                        val cell = size.width / count
-                        val left = at * cell
+                        val (left, right) = blockBounds(cellEdges(weights, size.width), at)
+                        val cell = right - left
                         drawRoundRect(colors.surfaceBright, Offset(left, 0f), Size(cell, size.height), CornerRadius(PILL_RADIUS.toPx()))
                         clipRect(left, 0f, left + cell, size.height) { this@drawWithContent.drawContent() }
                         if (sweep != null) {
@@ -271,14 +350,14 @@ fun <T> TeslaSlider(
                         }
                     },
             ) {
-                options.forEach { (_, label) ->
-                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                options.forEachIndexed { index, (_, label) ->
+                    Box(Modifier.weight(weights[index]).fillMaxHeight(), contentAlignment = Alignment.Center) {
                         Text(
                             label,
                             style = labelStyle.copy(fontWeight = FontWeight.SemiBold),
                             color = colors.onSurface,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = LABEL_HORIZONTAL_PADDING, vertical = 8.dp),
                         )
                     }
                 }

@@ -11,6 +11,9 @@ or `ACCESS_WIFI_STATE` permissions.
   all of them are under *All commands* (the search icon).
 - **Guided setup** with pictures: VIN, permissions, finding the car, and pairing with the key card.
 - **Background connection** (optional) and a **Quick Settings tile** for locking and unlocking.
+- **Languages:** English, Slovenian, Croatian, French, German, Norwegian Bokmål, Danish, Italian
+  and Spanish. Follows your phone’s language; Android 13 and newer also offer a per-app language
+  choice in the phone’s app settings.
 - A grey theme with large text, labelled controls and TalkBack support; light and dark.
 
 ## Install

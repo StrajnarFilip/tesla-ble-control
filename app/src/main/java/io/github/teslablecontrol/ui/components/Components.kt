@@ -51,10 +51,12 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -149,10 +151,29 @@ fun gridColumns(): Int {
  */
 @Composable
 fun ControlGrid(modifier: Modifier = Modifier, columns: Int = gridColumns(), content: @Composable () -> Unit) {
+    // These grids contain two-state closure sliders. Reserve space for the longest translated
+    // state, including the selected label's heavier font, before choosing how many columns fit.
+    // Their titles must fit on one line too: a title that wraps would push its slider below the
+    // one beside it.
+    val measurer = rememberTextMeasurer()
+    val titleStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+    val titles = listOf(R.string.closure_frunk, R.string.closure_trunk, R.string.closure_tonneau, R.string.charging_port, R.string.closure_windows, R.string.closure_sunroof)
+        .map { stringResource(it) }
+    val widestTitle = with(LocalDensity.current) {
+        titles.maxOf { measurer.measure(AnnotatedString(it), titleStyle, softWrap = false).size.width }.toDp()
+    }
+    val minimumCell = maxOf(
+        minimumSliderWidth(
+            listOf(stringResource(R.string.state_closed), stringResource(R.string.state_open), stringResource(R.string.state_vented)),
+            optionCount = 2,
+        ),
+        widestTitle,
+    ) + 32.dp
     Layout(content = content, modifier = modifier.fillMaxWidth()) { measurables, constraints ->
         val width = constraints.maxWidth
-        val cell = width / columns
-        val rows = measurables.chunked(columns).map { row -> row.map { it.measure(Constraints(minWidth = cell, maxWidth = cell)) } }
+        val fittingColumns = minOf(columns, (width / minimumCell.roundToPx().coerceAtLeast(1)).coerceAtLeast(1))
+        val cell = width / fittingColumns
+        val rows = measurables.chunked(fittingColumns).map { row -> row.map { it.measure(Constraints(minWidth = cell, maxWidth = cell)) } }
         layout(width, rows.sumOf { row -> row.maxOf { it.height } }) {
             var y = 0
             rows.forEach { row ->
@@ -263,8 +284,17 @@ fun <T> OptionChips(
 ) {
     val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
     val gap = 8.dp
+    val measurer = rememberTextMeasurer()
+    val labelStyle = MaterialTheme.typography.labelLarge
+    // Cells are never narrower than the longest word of any label (plus the chip's padding and
+    // outline), so a translated word wraps whole onto the next line instead of being split.
+    val longestWord = with(LocalDensity.current) {
+        options.flatMap { it.second.split(' ') }
+            .maxOfOrNull { word -> measurer.measure(AnnotatedString(word), labelStyle, softWrap = false).size.width }
+            ?.toDp() ?: 0.dp
+    }
     BoxWithConstraints(modifier.fillMaxWidth().selectableGroup()) {
-        val minCell = 76.dp * fontScale
+        val minCell = maxOf(76.dp * fontScale, longestWord + 12.dp + 7.dp)
         val fit = ((maxWidth + gap) / (minCell + gap)).toInt().coerceIn(1, options.size.coerceAtLeast(1))
         val rows = (options.size + fit - 1) / fit
         val perRow = (options.size + rows - 1) / rows.coerceAtLeast(1)

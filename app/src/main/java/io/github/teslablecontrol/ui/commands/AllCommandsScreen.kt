@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -52,10 +53,11 @@ fun AllCommandsScreen(viewModel: MainViewModel, navigator: Navigator) {
     val asleep = stringResource(R.string.commands_works_asleep)
     val modelOnly = stringResource(R.string.commands_model_only)
     val all = remember { CommandInfos.all.filter { CommandCatalog.find(it.id) != null } }
-    val matches = remember(query) {
+    val resources = LocalResources.current
+    val matches = remember(query, resources) {
         val words = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
         all.filter { info ->
-            val text = "${info.title} ${info.description} ${info.id} ${info.group.title}".lowercase()
+            val text = "${resources.getString(info.title)} ${resources.getString(info.description)} ${info.id} ${resources.getString(info.group.title)}".lowercase()
             words.all { it in text }
         }
     }
@@ -95,7 +97,7 @@ fun AllCommandsScreen(viewModel: MainViewModel, navigator: Navigator) {
                     }
                 }
                 grouped.forEach { (group, infos) ->
-                    item(key = group.name) { SectionHeader(group.title) }
+                    item(key = group.name) { SectionHeader(stringResource(group.title)) }
                     items(infos, key = { it.id }) { info ->
                         val spec = CommandCatalog[info.id]
                         val notes = listOfNotNull(
@@ -103,9 +105,9 @@ fun AllCommandsScreen(viewModel: MainViewModel, navigator: Navigator) {
                             info.models?.joinToString(" / ") { it.label }?.let { modelOnly.format(it) },
                         )
                         ButtonWithNote(
-                            label = info.title,
+                            label = stringResource(info.title),
                             onClick = { navigator.to(CommandRoute(info.id)) },
-                            note = "${info.description}\n${notes.joinToString(" · ")}",
+                            note = "${stringResource(info.description)}\n${notes.joinToString(" · ")}",
                             busy = running == info.id,
                             modifier = Modifier.padding(vertical = 6.dp),
                         )
@@ -116,8 +118,8 @@ fun AllCommandsScreen(viewModel: MainViewModel, navigator: Navigator) {
                     items(CommandInfos.unavailableOverBluetooth, key = { it.first }) { (title, reason) ->
                         // Not buttons: these can't be sent from here at all.
                         Column(Modifier.padding(vertical = 8.dp).semantics(mergeDescendants = true) {}) {
-                            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(title), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(reason), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

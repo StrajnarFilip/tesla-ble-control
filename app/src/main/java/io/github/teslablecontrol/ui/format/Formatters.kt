@@ -1,6 +1,9 @@
 package io.github.teslablecontrol.ui.format
 
 import android.content.Context
+import android.icu.text.DisplayContext
+import android.icu.text.RelativeDateTimeFormatter
+import android.icu.util.ULocale
 import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
@@ -10,6 +13,7 @@ import io.github.teslablecontrol.core.ControllerState
 import io.github.teslablecontrol.core.FailureKind
 import io.github.teslablecontrol.core.LinkStatus
 import io.github.teslablecontrol.core.Stage
+import io.github.teslablecontrol.data.CarModel
 import io.github.teslablecontrol.data.UnitSystem
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -81,9 +85,24 @@ fun Units.pressureFromBar(bar: Float?): String = when {
 
 fun Units.speedFromMph(mph: Double): String = if (miles) "${mph.roundToInt()} mph" else "${(mph * 1.609344).roundToInt()} km/h"
 
-fun relativeTime(millis: Long?): String? = millis?.let {
-    DateUtils.getRelativeTimeSpanString(it, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
+/** "5 minutes ago", worded to sit in the middle of a sentence such as "Updated 5 minutes ago". */
+fun relativeTime(millis: Long?, now: Long = System.currentTimeMillis()): String? = millis?.let {
+    val formatter = RelativeDateTimeFormatter.getInstance(
+        ULocale.forLocale(Locale.getDefault()), null, RelativeDateTimeFormatter.Style.LONG, DisplayContext.CAPITALIZATION_FOR_MIDDLE_OF_SENTENCE,
+    )
+    val minutes = ((now - it) / DateUtils.MINUTE_IN_MILLIS).coerceAtLeast(0)
+    val (amount, unit) = when {
+        minutes < 60 -> minutes to RelativeDateTimeFormatter.RelativeUnit.MINUTES
+        minutes < 24 * 60 -> minutes / 60 to RelativeDateTimeFormatter.RelativeUnit.HOURS
+        else -> minutes / (24 * 60) to RelativeDateTimeFormatter.RelativeUnit.DAYS
+    }
+    formatter.format(amount.toDouble(), RelativeDateTimeFormatter.Direction.LAST, unit)
 }
+
+/** The model's name; only "Other" is a word that needs translating. */
+@Composable
+fun carModelName(model: CarModel): String =
+    if (model == CarModel.OTHER) androidx.compose.ui.res.stringResource(R.string.model_other) else model.label
 
 fun minutesToClock(minutes: Int): String = String.format(Locale.ROOT, "%02d:%02d", (minutes / 60) % 24, minutes % 60)
 
@@ -94,12 +113,27 @@ fun durationText(minutes: Int): String = when {
 }
 
 /** The car's day bitmask (bit 0 = Sunday) as text: "Every day", "Weekdays" or "Mon, Wed". */
-fun daysText(mask: Int): String {
-    if (mask and 127 == 127) return "Every day"
-    if (mask and 127 == 62) return "Weekdays"
-    val names = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-    return names.filterIndexed { i, _ -> mask and (1 shl i) != 0 }.joinToString(", ").ifEmpty { "No days" }
+fun daysText(
+    mask: Int,
+    locale: Locale = Locale.getDefault(),
+    everyDay: String = "Every day",
+    weekdays: String = "Weekdays",
+    noDays: String = "No days",
+): String {
+    if (mask and 127 == 127) return everyDay
+    if (mask and 127 == 62) return weekdays
+    val names = java.text.DateFormatSymbols(locale).shortWeekdays.drop(1)
+    return names.filterIndexed { i, _ -> mask and (1 shl i) != 0 }.joinToString(", ").ifEmpty { noDays }
 }
+
+@Composable
+fun scheduleDaysText(mask: Int): String = daysText(
+    mask,
+    currentLocale(),
+    androidx.compose.ui.res.stringResource(R.string.commands_days_all),
+    androidx.compose.ui.res.stringResource(R.string.commands_days_weekdays),
+    androidx.compose.ui.res.stringResource(R.string.label_no_days),
+)
 
 fun stageText(context: Context, stage: Stage): String = context.getString(
     when (stage) {

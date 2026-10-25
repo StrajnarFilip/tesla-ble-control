@@ -39,7 +39,7 @@ import io.github.teslablecontrol.ui.components.SettingRow
 import io.github.teslablecontrol.ui.components.SliderControl
 import io.github.teslablecontrol.ui.components.TeslaButton
 import io.github.teslablecontrol.ui.format.Units
-import io.github.teslablecontrol.ui.format.daysText
+import io.github.teslablecontrol.ui.format.scheduleDaysText
 import io.github.teslablecontrol.ui.format.distanceReading
 import io.github.teslablecontrol.ui.format.durationText
 import io.github.teslablecontrol.ui.format.minutesToClock
@@ -123,7 +123,7 @@ fun ChargingScreen(viewModel: MainViewModel, navigator: Navigator) {
         ButtonWithNote(
             label = stringResource(R.string.charging_departure),
             onClick = { navigator.to(CommandRoute("scheduled-departure")) },
-            note = "Charge and warm up the cabin to be ready at a time",
+            note = stringResource(R.string.charging_departure_description),
         )
         TeslaButton(
             stringResource(R.string.charging_departure_off), { viewModel.send("scheduled-departure-clear") },
@@ -148,11 +148,11 @@ fun ChargingScreen(viewModel: MainViewModel, navigator: Navigator) {
                 val start = if (schedule.startEnabled) minutesToClock(schedule.startTime) else "…"
                 val end = if (schedule.endEnabled) minutesToClock(schedule.endTime) else "…"
                 ItemRow(
-                    title = "$start–$end · ${daysText(schedule.daysOfWeek)}",
+                    title = "$start–$end · ${scheduleDaysText(schedule.daysOfWeek)}",
                     description = listOfNotNull(
                         schedule.name.takeIf { it.isNotBlank() },
-                        if (schedule.enabled) "Enabled" else "Disabled",
-                        "once".takeIf { schedule.oneTime },
+                        if (schedule.enabled) stringResource(R.string.param_enabled) else stringResource(R.string.label_disabled),
+                        stringResource(R.string.label_once).takeIf { schedule.oneTime },
                     ).joinToString(" · "),
                     actionLabel = stringResource(R.string.action_remove),
                     onAction = {
