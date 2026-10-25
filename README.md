@@ -20,7 +20,7 @@ or `ACCESS_WIFI_STATE` permissions.
 
 Download the APK from the [latest release](https://github.com/StrajnarFilip/tesla-ble-control/releases/latest)
 and open it on your phone (Android 8 or newer); Android asks once to allow installs from your
-browser or file manager. With a computer, `adb install tesla-ble-control-0.1.0.apk` works too.
+browser or file manager. With a computer, `adb install tesla-ble-control-0.1.1.apk` works too.
 
 Releases are signed with a private key. To check an APK, `apksigner verify --print-certs` should
 show this SHA-256 certificate digest:
