@@ -92,8 +92,8 @@ fun Illustration(picture: Picture, description: String, modifier: Modifier = Mod
                 Picture.PERMISSIONS -> permissions(ink, t)
                 Picture.SCANNING -> scanning(ink, t)
                 Picture.ROLES -> roles(ink)
-                Picture.KEY_CARD_CHARGER -> keyCard(ink, t, onCharger = true)
-                Picture.KEY_CARD_CONSOLE -> keyCard(ink, t, onCharger = false)
+                Picture.KEY_CARD_CHARGER -> keyCardOnCharger(ink, t)
+                Picture.KEY_CARD_CONSOLE -> keyCardBehindCupHolders(ink, t)
                 Picture.TILE -> tile(ink, t)
                 Picture.SUCCESS -> success(ink)
                 Picture.TOO_MANY_CONNECTIONS -> tooMany(ink)
@@ -270,11 +270,43 @@ private fun DrawScope.roles(ink: Ink) {
     drawLine(ink.line, Offset(144f, 88f), Offset(144f, 97f), 2f, StrokeCap.Round)
 }
 
+/** A key card coming down onto [target], highlighted, then sending out waves once it lands. */
+private fun DrawScope.dropCard(ink: Ink, t: Float, target: Rect, landing: Offset = target.center) {
+    drawRoundRect(ink.accent.copy(alpha = 0.25f), target.topLeft, target.size, CornerRadius(8f))
+    drawRoundRect(ink.accent, target.topLeft, target.size, CornerRadius(8f), style = stroke(2.4f))
+    val lift = (1f - t) * 28f
+    val card = Offset(landing.x - 20f, landing.y - 12.5f - lift)
+    keyCardShape(ink, card.x, card.y, w = 40f, h = 25f)
+    if (t > 0.7f) waves(ink, card.x + 42f, landing.y, (t - 0.7f) / 0.3f)
+}
+
 /**
- * The centre console from above, front of the car on the left: wireless phone charger, cup holders,
- * then the reader area behind them. The card comes down onto the highlighted spot.
+ * The wireless phone charger of a Model 3 from 2024, seen from the driver's seat: a flat pad in a
+ * thick frame, with two ridges between the phone spots. There are no cup holders around it. The
+ * card goes on one of the spots, since either one reads it.
  */
-private fun DrawScope.keyCard(ink: Ink, t: Float, onCharger: Boolean) {
+private fun DrawScope.keyCardOnCharger(ink: Ink, t: Float) {
+    drawRoundRect(ink.fill, Offset(34f, 18f), Size(132f, 90f), CornerRadius(14f))
+    drawRoundRect(ink.line, Offset(34f, 18f), Size(132f, 90f), CornerRadius(14f), style = stroke())
+    val pad = Rect(Offset(44f, 26f), Size(112f, 70f))
+    drawRoundRect(ink.soft, pad.topLeft, pad.size, CornerRadius(8f))
+    drawRoundRect(ink.line, pad.topLeft, pad.size, CornerRadius(8f), style = stroke(1.6f))
+    // The two raised ridges at the top of the pad that separate the phone spots.
+    for ((top, bottom) in listOf(93f to 95f, 107f to 105f)) {
+        val ridge = Path().apply {
+            moveTo(top - 2.5f, 27f); lineTo(top + 2.5f, 27f); lineTo(bottom + 2.5f, 48f); lineTo(bottom - 2.5f, 48f); close()
+        }
+        drawPath(ridge, ink.fill)
+        drawPath(ridge, ink.line, style = stroke(1.4f))
+    }
+    dropCard(ink, t, pad, landing = Offset(68f, 68f))
+}
+
+/**
+ * The centre console of earlier cars from above, front of the car on the left: wireless phone
+ * charger, cup holders, then the reader area behind them, where the card comes down.
+ */
+private fun DrawScope.keyCardBehindCupHolders(ink: Ink, t: Float) {
     drawRoundRect(ink.soft, Offset(10f, 30f), Size(180f, 72f), CornerRadius(16f))
     drawRoundRect(ink.line, Offset(10f, 30f), Size(180f, 72f), CornerRadius(16f), style = stroke())
     // Wireless charger with a lightning mark.
@@ -288,17 +320,7 @@ private fun DrawScope.keyCard(ink: Ink, t: Float, onCharger: Boolean) {
     // Cup holders.
     drawCircle(ink.line, 11f, Offset(100f, 53f), style = stroke())
     drawCircle(ink.line, 11f, Offset(100f, 79f), style = stroke())
-    // Reader area behind the cup holders.
-    val behind = Rect(Offset(124f, 44f), Size(54f, 44f))
-    drawRoundRect(ink.line.copy(alpha = 0.35f), behind.topLeft, behind.size, CornerRadius(6f), style = stroke(1.6f))
-
-    val target = if (onCharger) charger else behind
-    drawRoundRect(ink.accent.copy(alpha = 0.25f), target.topLeft, target.size, CornerRadius(8f))
-    drawRoundRect(ink.accent, target.topLeft, target.size, CornerRadius(8f), style = stroke(2.4f))
-    val lift = (1f - t) * 28f
-    val card = Offset(target.center.x - 20f, target.center.y - 12.5f - lift)
-    keyCardShape(ink, card.x, card.y, w = 40f, h = 25f)
-    if (t > 0.7f) waves(ink, card.x + 42f, target.center.y, (t - 0.7f) / 0.3f)
+    dropCard(ink, t, Rect(Offset(124f, 44f), Size(54f, 44f)))
 }
 
 private fun DrawScope.tile(ink: Ink, t: Float) {

@@ -67,10 +67,10 @@
     <string name="guide_pair_step3">3. Right away, place the key card flat on the card reader and hold it still for a few seconds.</string>
     <string name="guide_pair_step4">The car\'s screen may not show anything. That\'s normal: this app notices the approval by itself.</string>
     <string name="guide_pair_where">Where the card reader is</string>
-    <string name="guide_pair_where_charger">Model 3 from 2024: on the wireless phone charger.</string>
+    <string name="guide_pair_where_charger">Model 3 from 2024: on either side of the wireless phone charger.</string>
     <string name="guide_pair_where_console">Earlier Model 3, and Model Y: on the centre console, just behind the cup holders.</string>
     <string name="guide_pair_where_other">Model S, Model X and Cybertruck: if one spot doesn\'t react, try the other.</string>
-    <string name="guide_pair_picture_charger">A key card placed on the wireless phone charger at the front of the centre console.</string>
+    <string name="guide_pair_picture_charger">A key card placed flat on one side of the wireless phone charger.</string>
     <string name="guide_pair_picture_console">A key card placed on the centre console just behind the cup holders.</string>
     <string name="guide_pair_send">Send pairing request</string>
     <string name="guide_pair_waiting">Waiting for the key card… %1$s</string>
@@ -80,6 +80,7 @@
 
     <string name="guide_done_title">You\'re all set</string>
     <string name="guide_done_body">This phone is now a key for %1$s.</string>
+    <string name="guide_done_rename">The car lists this key as a phone key, because Bluetooth can\'t send a name for it. To tell it apart from other keys, on the car\'s touchscreen go to Controls, then Locks, then Keys, tap the pencil next to the newest phone key, and name it “Tesla BLE Control”.</string>
     <string name="guide_done_picture">Quick Settings with the car lock tile highlighted.</string>
     <string name="guide_add_tile">Add “Car lock” to Quick Settings</string>
     <string name="guide_tile_manual">To add it yourself: swipe down twice from the top of the screen, tap the pencil (edit), and drag “Car lock” into your tiles.</string>

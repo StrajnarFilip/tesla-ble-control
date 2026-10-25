@@ -189,7 +189,7 @@ object CommandInfos {
     /** Commands the official library offers that can't be sent over Bluetooth, with the reason. */
     val unavailableOverBluetooth: List<Pair<String, String>> = listOf(
         "Turn on PIN to Drive" to "Tesla's library only allows this over the internet. You can turn PIN to Drive off here.",
-        "Rename a key" to "Key names are stored in your Tesla account, which needs the internet.",
+        "Rename a key" to "Bluetooth can't send a key name. Rename it on the car's touchscreen: Controls, then Locks, then Keys, then the pencil.",
         "Account and product information" to "These come from Tesla's servers, not the car.",
         "Nearby charging sites" to "The car doesn't return this list over Bluetooth.",
     )

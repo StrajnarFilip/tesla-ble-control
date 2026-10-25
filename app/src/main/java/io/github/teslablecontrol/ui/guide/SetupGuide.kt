@@ -634,6 +634,7 @@ private fun DoneStep(viewModel: MainViewModel, carName: String) {
     Illustration(Picture.SUCCESS, stringResource(R.string.guide_pair_done))
     StepTitle(stringResource(R.string.guide_done_title))
     Body(stringResource(R.string.guide_done_body, carName))
+    Body(stringResource(R.string.guide_done_rename))
     SectionGroup {
         ToggleRow(
             title = stringResource(R.string.settings_stay_connected),
