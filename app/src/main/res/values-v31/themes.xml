@@ -6,5 +6,7 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowSplashScreenBackground">@color/window_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <!-- The silver car needs the icon's graphite behind it on the light splash screen. -->
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/launcher_background</item>
     </style>
 </resources>

@@ -3,37 +3,18 @@ package io.github.teslablecontrol.ui.charging
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Event
-import androidx.compose.material.icons.outlined.EventBusy
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.TimerOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.tesla.generated.carserver.vehicle.Vehicle
@@ -45,30 +26,31 @@ import io.github.teslablecontrol.ui.CommandRoute
 import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
 import io.github.teslablecontrol.ui.commands.onOff
-import io.github.teslablecontrol.ui.components.ActionRow
-import io.github.teslablecontrol.ui.components.ActionTile
-import io.github.teslablecontrol.ui.components.ChargePortTile
+import io.github.teslablecontrol.ui.components.ButtonGrid
+import io.github.teslablecontrol.ui.components.ButtonWithNote
+import io.github.teslablecontrol.ui.components.ChargePortRow
 import io.github.teslablecontrol.ui.components.InfoRow
+import io.github.teslablecontrol.ui.components.ItemRow
 import io.github.teslablecontrol.ui.components.MainScreenFrame
 import io.github.teslablecontrol.ui.components.ReadingText
-import io.github.teslablecontrol.ui.components.SectionCard
+import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.SectionHeader
-import io.github.teslablecontrol.ui.components.SettingTile
+import io.github.teslablecontrol.ui.components.SettingRow
 import io.github.teslablecontrol.ui.components.SliderControl
-import io.github.teslablecontrol.ui.components.Stepper
-import io.github.teslablecontrol.ui.components.TileGrid
+import io.github.teslablecontrol.ui.components.TeslaButton
 import io.github.teslablecontrol.ui.format.Units
 import io.github.teslablecontrol.ui.format.daysText
-import io.github.teslablecontrol.ui.format.distanceFromMiles
 import io.github.teslablecontrol.ui.format.distanceReading
 import io.github.teslablecontrol.ui.format.durationText
 import io.github.teslablecontrol.ui.format.minutesToClock
 import io.github.teslablecontrol.ui.format.oneDecimal
 import io.github.teslablecontrol.ui.format.percentReading
-import io.github.teslablecontrol.ui.theme.NumberStyle
 import kotlin.math.roundToInt
 
 private val CHARGING_CATEGORIES = listOf(StateCategory.CHARGE, StateCategory.CHARGE_SCHEDULE)
+
+/** What the Everyday preset sets the charge limit to. */
+private const val EVERYDAY_LIMIT = 80
 
 @Composable
 fun ChargingScreen(viewModel: MainViewModel, navigator: Navigator) {
@@ -80,59 +62,46 @@ fun ChargingScreen(viewModel: MainViewModel, navigator: Navigator) {
     val snapshot = state.snapshot
     val charge = snapshot.charge
 
-    LaunchedEffect(profile?.vin) { viewModel.refresh(CHARGING_CATEGORIES) }
-
-    MainScreenFrame(viewModel, navigator, stringResource(R.string.charging_title), onRefresh = { viewModel.refresh(CHARGING_CATEGORIES) }) {
-        BatteryCard(charge, units)
+    MainScreenFrame(viewModel, navigator, stringResource(R.string.charging_title), CHARGING_CATEGORIES) {
+        BatteryStatus(charge, units)
 
         val charging = snapshot.isCharging == true
-        Button(
+        val startText = stringResource(R.string.charging_start)
+        val stopText = stringResource(R.string.charging_stop)
+        TeslaButton(
+            label = if (charging) stopText else startText,
             onClick = { viewModel.send(if (charging) "charging-stop" else "charging-start") },
-            enabled = running != "charging-start" && running != "charging-stop",
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        ) {
-            Icon(
-                painterResource(if (charging) R.drawable.ic_action_charge_stop else R.drawable.ic_action_charge_start),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(stringResource(if (charging) R.string.charging_stop else R.string.charging_start))
-        }
+            busy = running == "charging-start" || running == "charging-stop",
+            labels = listOf(startText, stopText),
+            modifier = Modifier.fillMaxWidth(),
+        )
 
-        SectionHeader(stringResource(R.string.charging_limit))
-        SectionCard {
+        // The controls carry their own titles.
+        SectionGroup(Modifier.padding(top = 12.dp)) {
             LimitEditor(viewModel, charge, running == "charging-set-limit")
         }
-        TileGrid { cell ->
-            ActionTile(
-                icon = R.drawable.ic_action_charge_standard,
-                title = stringResource(R.string.charging_to_standard),
-                state = null,
-                onClick = { viewModel.send("charge-standard-range") },
-                modifier = cell,
-                busy = running == "charge-standard-range",
+        // Each preset says the limit it sets.
+        val max = charge?.takeIf { it.hasChargeLimitSocMax() }?.chargeLimitSocMax?.takeIf { it > 0 } ?: 100
+        ButtonGrid {
+            TeslaButton(
+                label = stringResource(R.string.charging_to_standard_percent, EVERYDAY_LIMIT),
+                onClick = { viewModel.send("charging-set-limit", mapOf("PERCENT" to EVERYDAY_LIMIT.toString())) },
+                busy = running == "charging-set-limit",
             )
-            ActionTile(
-                icon = R.drawable.ic_action_charge_max,
-                title = stringResource(R.string.charging_to_max),
-                state = null,
+            TeslaButton(
+                label = stringResource(R.string.charging_to_max_percent, max),
                 onClick = { viewModel.send("charge-max-range") },
-                modifier = cell,
                 busy = running == "charge-max-range",
             )
         }
 
-        SectionHeader(stringResource(R.string.charging_amps))
-        SectionCard { AmpsEditor(viewModel, charge, running == "charging-set-amps") }
-
-        SectionHeader(stringResource(R.string.charging_port))
-        TileGrid { cell ->
-            ChargePortTile(viewModel, snapshot, running, cell)
+        SectionGroup(Modifier.padding(top = 12.dp)) {
+            AmpsEditor(viewModel, charge, running == "charging-set-amps")
+            ChargePortRow(viewModel, snapshot, running)
         }
 
         SectionHeader(stringResource(R.string.charging_scheduled))
-        SectionCard {
+        SectionGroup {
             val mode = charge?.takeIf { it.hasScheduledChargingMode() }?.scheduledChargingMode
             val modeText = when (mode) {
                 Vehicle.ChargeState.ScheduledChargingMode.ScheduledChargingModeStartAt ->
@@ -143,39 +112,29 @@ fun ChargingScreen(viewModel: MainViewModel, navigator: Navigator) {
                 else -> stringResource(R.string.value_unknown)
             }
             InfoRow(stringResource(R.string.charging_mode), modeText)
-            ActionRow(
-                title = stringResource(R.string.charging_schedule_start),
-                icon = Icons.Outlined.Schedule,
-                onClick = { navigator.to(CommandRoute("charging-schedule")) },
-            )
-            ActionRow(
-                title = stringResource(R.string.charging_schedule_off),
-                icon = Icons.Outlined.TimerOff,
+        }
+        ButtonGrid(columns = 1) {
+            TeslaButton(stringResource(R.string.charging_schedule_start), { navigator.to(CommandRoute("charging-schedule")) })
+            TeslaButton(
+                stringResource(R.string.charging_schedule_off), { viewModel.send("charging-schedule-cancel") },
                 busy = running == "charging-schedule-cancel",
-                onClick = { viewModel.send("charging-schedule-cancel") },
-            )
-            ActionRow(
-                title = stringResource(R.string.charging_departure),
-                description = "Charge and warm up the cabin to be ready at a time",
-                icon = Icons.Outlined.Event,
-                onClick = { navigator.to(CommandRoute("scheduled-departure")) },
-            )
-            ActionRow(
-                title = stringResource(R.string.charging_departure_off),
-                icon = Icons.Outlined.EventBusy,
-                busy = running == "scheduled-departure-clear",
-                onClick = { viewModel.send("scheduled-departure-clear") },
             )
         }
+        ButtonWithNote(
+            label = stringResource(R.string.charging_departure),
+            onClick = { navigator.to(CommandRoute("scheduled-departure")) },
+            note = "Charge and warm up the cabin to be ready at a time",
+        )
+        TeslaButton(
+            stringResource(R.string.charging_departure_off), { viewModel.send("scheduled-departure-clear") },
+            Modifier.fillMaxWidth(),
+            busy = running == "scheduled-departure-clear",
+        )
 
         SectionHeader(stringResource(R.string.charging_schedules))
-        SectionCard {
-            // Actions first: adding or removing schedules changes only the list below them.
-            ActionRow(
-                title = stringResource(R.string.charging_add_schedule),
-                icon = Icons.Outlined.Add,
-                onClick = { navigator.to(CommandRoute("charging-schedule-add")) },
-            )
+        // Actions first: adding or removing schedules changes only the list below them.
+        TeslaButton(stringResource(R.string.charging_add_schedule), { navigator.to(CommandRoute("charging-schedule-add")) }, Modifier.fillMaxWidth())
+        SectionGroup {
             val schedules = snapshot.chargeSchedules?.chargeSchedulesList.orEmpty()
             if (schedules.isEmpty()) {
                 Text(
@@ -188,16 +147,15 @@ fun ChargingScreen(viewModel: MainViewModel, navigator: Navigator) {
             schedules.forEach { schedule ->
                 val start = if (schedule.startEnabled) minutesToClock(schedule.startTime) else "…"
                 val end = if (schedule.endEnabled) minutesToClock(schedule.endTime) else "…"
-                ActionRow(
+                ItemRow(
                     title = "$start–$end · ${daysText(schedule.daysOfWeek)}",
                     description = listOfNotNull(
                         schedule.name.takeIf { it.isNotBlank() },
                         if (schedule.enabled) "Enabled" else "Disabled",
                         "once".takeIf { schedule.oneTime },
                     ).joinToString(" · "),
-                    icon = Icons.Outlined.Delete,
-                    trailing = stringResource(R.string.action_remove),
-                    onClick = {
+                    actionLabel = stringResource(R.string.action_remove),
+                    onAction = {
                         viewModel.send("charging-schedule-remove", mapOf("TYPE" to "id", "ID" to java.lang.Long.toUnsignedString(schedule.id)))
                     },
                 )
@@ -206,23 +164,17 @@ fun ChargingScreen(viewModel: MainViewModel, navigator: Navigator) {
 
         SectionHeader(stringResource(R.string.charging_power_settings))
         val lastSet by viewModel.lastSet.collectAsState()
-        TileGrid { cell ->
-            SettingTile(
+        SectionGroup {
+            SettingRow(
                 name = stringResource(R.string.charging_low_power),
                 on = lastSet["low-power-mode"],
-                onIcon = R.drawable.ic_action_leaf,
-                offIcon = R.drawable.ic_action_leaf_off,
                 onSet = { on -> viewModel.send("low-power-mode", mapOf("STATE" to onOff(on))) },
-                modifier = cell,
                 busy = running == "low-power-mode",
             )
-            SettingTile(
+            SettingRow(
                 name = stringResource(R.string.charging_accessory_power),
                 on = lastSet["keep-accessory-power"],
-                onIcon = R.drawable.ic_action_outlet,
-                offIcon = R.drawable.ic_action_outlet_off,
                 onSet = { on -> viewModel.send("keep-accessory-power", mapOf("STATE" to onOff(on))) },
-                modifier = cell,
                 busy = running == "keep-accessory-power",
             )
         }
@@ -236,30 +188,26 @@ fun ChargingScreen(viewModel: MainViewModel, navigator: Navigator) {
 
 /** Battery level and range as large numbers, then what the charger is doing in words. */
 @Composable
-private fun BatteryCard(charge: Vehicle.ChargeState?, units: Units) {
+private fun BatteryStatus(charge: Vehicle.ChargeState?, units: Units) {
     val unknown = stringResource(R.string.value_unknown)
-    Card(
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        // The rows below bring their own side padding.
-        Column(Modifier.padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-                    ReadingText(percentReading(charge?.takeIf { it.hasBatteryLevel() }?.batteryLevel))
-                    Text(stringResource(R.string.home_battery), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-                    ReadingText(units.distanceReading(charge?.takeIf { it.hasBatteryRange() }?.batteryRange))
-                    Text(stringResource(R.string.home_range), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
+                ReadingText(percentReading(charge?.takeIf { it.hasBatteryLevel() }?.batteryLevel))
+                Text(stringResource(R.string.home_battery), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            // The same rows whether or not the car is charging, so the controls below never move.
-            val charging = charge != null && charge.chargingState.typeCase == Vehicle.ChargeState.ChargingState.TypeCase.CHARGING
-            val minutes = charge?.takeIf { charging }?.let {
-                it.takeIf { c -> c.hasMinutesToChargeLimit() }?.minutesToChargeLimit ?: it.takeIf { c -> c.hasMinutesToFullCharge() }?.minutesToFullCharge
-            }?.takeIf { it > 0 }
+            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
+                ReadingText(units.distanceReading(charge?.takeIf { it.hasBatteryRange() }?.batteryRange))
+                Text(stringResource(R.string.home_range), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        // The same rows whether or not the car is charging, so the controls below never move.
+        val charging = charge != null && charge.chargingState.typeCase == Vehicle.ChargeState.ChargingState.TypeCase.CHARGING
+        val minutes = charge?.takeIf { charging }?.let {
+            it.takeIf { c -> c.hasMinutesToChargeLimit() }?.minutesToChargeLimit ?: it.takeIf { c -> c.hasMinutesToFullCharge() }?.minutesToFullCharge
+        }?.takeIf { it > 0 }
+        // The rows bring their own side padding, so they reach into the page margins to line up.
+        SectionGroup {
             InfoRow(stringResource(R.string.charging_status), chargingStateText(charge) ?: unknown)
             InfoRow(
                 stringResource(R.string.charging_power),

@@ -2,19 +2,18 @@ package io.github.teslablecontrol.tile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.teslablecontrol.R
+import io.github.teslablecontrol.ui.components.DialogButtons
 import io.github.teslablecontrol.ui.guide.Illustration
 import io.github.teslablecontrol.ui.guide.Picture
 
@@ -35,16 +34,13 @@ fun TileSetupDialog(onResult: (LockTileService.Companion.AddResult) -> Unit, onD
                 Text(stringResource(R.string.guide_tile_manual), style = MaterialTheme.typography.bodyMedium)
             }
         },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         confirmButton = {
-            if (LockTileService.canRequestAdd) {
-                TextButton(
-                    onClick = { LockTileService.requestAdd(context, onResult) },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                ) { Text(stringResource(R.string.tile_setup_add)) }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.action_close)) }
+            DialogButtons(
+                stringResource(R.string.action_close), onDismiss,
+                stringResource(R.string.tile_setup_add).takeIf { LockTileService.canRequestAdd },
+                { LockTileService.requestAdd(context, onResult) },
+            )
         },
     )
 }

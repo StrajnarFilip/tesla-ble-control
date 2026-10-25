@@ -9,6 +9,7 @@ import io.github.teslablecontrol.container
 import io.github.teslablecontrol.core.CommandOutcome
 import io.github.teslablecontrol.core.ControllerState
 import io.github.teslablecontrol.core.FailureKind
+import io.github.teslablecontrol.core.LinkStatus
 import io.github.teslablecontrol.core.VehicleController
 import io.github.teslablecontrol.data.AppSettings
 import io.github.teslablecontrol.data.VehicleProfile
@@ -84,9 +85,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _pending = MutableStateFlow<PendingCommand?>(null)
     val pending: StateFlow<PendingCommand?> = _pending.asStateFlow()
 
-    /** The command currently being sent from this screen, for per-button progress. */
     private val _running = MutableStateFlow<String?>(null)
-    val running: StateFlow<String?> = _running.asStateFlow()
+
+    /**
+     * The command being sent from this screen, or waiting for the user to confirm it, for per-control
+     * progress; a slider keeps showing the new choice meanwhile.
+     */
+    val running: StateFlow<String?> = combine(_running, _pending) { sending, waiting -> sending ?: waiting?.commandId }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val controller: VehicleController? get() = profile.value?.let(app::controllerFor)
 
@@ -147,6 +153,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         app.profiles.update(vin) { it.copy(lastSet = it.lastSet + (key to value)) }
     }
 
+    /** Remembers which seats the car has heaters and fans in, so the Climate screen knows while it sleeps. */
+    fun rememberSeats(heated: Set<String>, cooled: Set<String>) {
+        val p = profile.value ?: return
+        if (p.heatedSeats == heated && p.cooledSeats == cooled) return
+        viewModelScope.launch { app.profiles.update(p.vin) { it.copy(heatedSeats = heated, cooledSeats = cooled) } }
+    }
+
     private fun report(commandId: String, outcome: CommandOutcome, args: Map<String, String> = emptyMap()) {
         val context = getApplication<Application>()
         when (outcome) {
@@ -167,12 +180,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Re-reads state. When [wake] is false a sleeping car is left asleep (its cached data stays). */
-    fun refresh(categories: Collection<StateCategory>, wake: Boolean = false) {
-        val target = controller ?: return
-        viewModelScope.launch {
+    fun refresh(categories: Collection<StateCategory>, wake: Boolean = false): Job? {
+        val target = controller ?: return null
+        return viewModelScope.launch {
             target.refreshBodyState()
             val outcome = target.refresh(categories, wake)
             if (wake && outcome is CommandOutcome.Failure) report("state", outcome)
+        }
+    }
+
+    private val _checkingQuietly = MutableStateFlow(false)
+
+    /** True while a periodic state check runs, which the screen doesn't show as activity. */
+    val checkingQuietly: StateFlow<Boolean> = _checkingQuietly.asStateFlow()
+
+    /**
+     * A periodic state check: the doors and locks, then [categories] if the car is awake. It never
+     * wakes the car, and runs only over an open connection, so it never starts a Bluetooth search.
+     */
+    fun checkState(categories: Collection<StateCategory>) {
+        val target = controller ?: return
+        val now = target.state.value
+        if (now.link != LinkStatus.CONNECTED || now.activity != null || _checkingQuietly.value) return
+        viewModelScope.launch {
+            _checkingQuietly.value = true
+            try {
+                target.refreshBodyState()
+                // The body controller says whether the car is awake; asking a sleeping car only fails.
+                if (target.state.value.snapshot.isAsleep == false) target.refresh(categories, wake = false)
+            } finally {
+                _checkingQuietly.value = false
+            }
         }
     }
 

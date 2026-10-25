@@ -14,6 +14,8 @@ object Palette {
     val DarkSurfaceContainer = Color(0xFF26282B)
     val DarkSurfaceHigh = Color(0xFF2E3034)
     val DarkSurfaceHighest = Color(0xFF383A3F)
+    // The chosen option of a segmented slider: lighter than anything it sits on.
+    val DarkSurfaceBright = Color(0xFF404348)
     val DarkOnSurface = Color(0xFFECEDEE)
     val DarkOnSurfaceVariant = Color(0xFFB5B8BD)
     val DarkOutline = Color(0xFF7D8188)
@@ -38,6 +40,7 @@ object Palette {
     val LightSurfaceContainer = Color(0xFFE9EAEC)
     val LightSurfaceHigh = Color(0xFFE1E2E5)
     val LightSurfaceHighest = Color(0xFFD7D9DC)
+    val LightSurfaceBright = Color(0xFFFFFFFF)
     val LightOnSurface = Color(0xFF17181A)
     val LightOnSurfaceVariant = Color(0xFF4D5157)
     val LightOutline = Color(0xFF6E7279)

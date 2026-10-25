@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="window_background">#FFF2F3F5</color>
+    <!-- The app icon: graphite like the car's dark screen, a silver car, its signal in the app's blue. -->
     <color name="launcher_background">#FF26282B</color>
-    <color name="launcher_foreground">#FFECEDEE</color>
+    <color name="launcher_foreground">#FFE9EAEC</color>
+    <color name="launcher_glass">#FF17191C</color>
     <color name="launcher_accent">#FF3E6AE1</color>
+    <color name="launcher_accent_dim">#FF34508F</color>
 </resources>

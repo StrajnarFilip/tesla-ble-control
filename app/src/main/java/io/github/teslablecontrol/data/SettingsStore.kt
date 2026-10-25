@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
@@ -37,6 +38,11 @@ data class AppSettings(
     val detailedLog: Boolean = false,
     /** Show a message when a command succeeds (problems are always shown). */
     val commandMessages: Boolean = false,
+    /**
+     * How often the car's state is read again, in seconds (0 = never): by the open screen, and by
+     * the background connection. These reads never wake the car.
+     */
+    val stateCheckSeconds: Int = 30,
     val selectedVin: String? = null,
 )
 
@@ -57,6 +63,7 @@ class SettingsStore(context: Context, scope: CoroutineScope) {
         val ONBOARDED = booleanPreferencesKey("onboarding_done")
         val DETAILED_LOG = booleanPreferencesKey("detailed_log")
         val COMMAND_MESSAGES = booleanPreferencesKey("command_messages")
+        val STATE_CHECK_SECONDS = intPreferencesKey("state_check_seconds")
         val SELECTED_VIN = stringPreferencesKey("selected_vin")
     }
 
@@ -77,6 +84,8 @@ class SettingsStore(context: Context, scope: CoroutineScope) {
         onboardingDone = p[Keys.ONBOARDED] ?: false,
         detailedLog = p[Keys.DETAILED_LOG] ?: false,
         commandMessages = p[Keys.COMMAND_MESSAGES] ?: false,
+        // 15 s was an option before 5 s replaced it.
+        stateCheckSeconds = p[Keys.STATE_CHECK_SECONDS]?.let { if (it == 15) 5 else it } ?: 30,
         selectedVin = p[Keys.SELECTED_VIN],
     )
 
@@ -102,6 +111,7 @@ class SettingsStore(context: Context, scope: CoroutineScope) {
             p[Keys.ONBOARDED] = after.onboardingDone
             p[Keys.DETAILED_LOG] = after.detailedLog
             p[Keys.COMMAND_MESSAGES] = after.commandMessages
+            p[Keys.STATE_CHECK_SECONDS] = after.stateCheckSeconds
             if (after.selectedVin != null) p[Keys.SELECTED_VIN] = after.selectedVin else p.remove(Keys.SELECTED_VIN)
         }
         return saved

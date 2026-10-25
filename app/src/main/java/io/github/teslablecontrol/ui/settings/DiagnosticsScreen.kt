@@ -35,9 +35,9 @@ import io.github.teslablecontrol.ui.BackScaffold
 import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
 import io.github.teslablecontrol.ui.UiMessage
-import io.github.teslablecontrol.ui.components.ActionButton
-import io.github.teslablecontrol.ui.components.ActionButtonRow
-import io.github.teslablecontrol.ui.components.SectionCard
+import io.github.teslablecontrol.ui.components.ButtonGrid
+import io.github.teslablecontrol.ui.components.SectionGroup
+import io.github.teslablecontrol.ui.components.TeslaButton
 import io.github.teslablecontrol.ui.components.ToggleRow
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -67,26 +67,36 @@ fun DiagnosticsScreen(viewModel: MainViewModel, navigator: Navigator) {
                     Text(stringResource(R.string.diagnostics_desc), style = MaterialTheme.typography.bodyMedium)
                 }
                 item {
-                    SectionCard {
+                    SectionGroup {
                         ToggleRow(
                             title = stringResource(R.string.settings_detailed_log),
                             description = stringResource(R.string.diagnostics_detailed_desc),
                             checked = s.detailedLog,
                             onCheckedChange = { on -> viewModel.updateSettings { it.copy(detailedLog = on) } },
                         )
-                        ActionButtonRow(
-                            listOf(
-                                ActionButton(stringResource(R.string.diagnostics_copy), R.drawable.ic_action_copy, {
+                        ButtonGrid(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), columns = 3) {
+                            TeslaButton(
+                                stringResource(R.string.diagnostics_copy),
+                                {
                                     context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Log", asText()))
                                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) viewModel.emit(UiMessage(resources.getString(R.string.copied)))
-                                }, enabled = entries.isNotEmpty()),
-                                ActionButton(stringResource(R.string.diagnostics_share), R.drawable.ic_action_share, {
+                                },
+                                enabled = entries.isNotEmpty(),
+                            )
+                            TeslaButton(
+                                stringResource(R.string.diagnostics_share),
+                                {
                                     val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, asText())
                                     context.startActivity(Intent.createChooser(send, resources.getString(R.string.diagnostics_share)))
-                                }, enabled = entries.isNotEmpty()),
-                                ActionButton(stringResource(R.string.diagnostics_clear), R.drawable.ic_action_erase, { log.clear() }, enabled = entries.isNotEmpty()),
-                            ),
-                        )
+                                },
+                                enabled = entries.isNotEmpty(),
+                            )
+                            TeslaButton(
+                                stringResource(R.string.diagnostics_clear),
+                                { log.clear() },
+                                enabled = entries.isNotEmpty(),
+                            )
+                        }
                     }
                 }
                 if (entries.isEmpty()) {

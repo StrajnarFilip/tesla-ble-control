@@ -16,18 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Autorenew
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.FileOpen
-import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.VerifiedUser
-import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,16 +46,18 @@ import io.github.teslablecontrol.ui.CommandRoute
 import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
 import io.github.teslablecontrol.ui.UiMessage
-import io.github.teslablecontrol.ui.components.ActionRow
+import io.github.teslablecontrol.ui.components.ButtonWithNote
 import io.github.teslablecontrol.ui.components.ConfirmDialog
 import io.github.teslablecontrol.ui.components.InfoRow
-import io.github.teslablecontrol.ui.components.SectionCard
+import io.github.teslablecontrol.ui.components.ItemRow
+import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.SectionHeader
+import io.github.teslablecontrol.ui.components.inGroup
 import io.github.teslablecontrol.ui.format.FailureAction
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
 
 private enum class KeyDialog { EXPORT, IMPORT, NEW }
 
@@ -183,7 +173,7 @@ fun KeysScreen(viewModel: MainViewModel, navigator: Navigator) {
         ) {
             Column(Modifier.widthIn(max = 840.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionHeader(stringResource(R.string.keys_this_phone))
-                SectionCard {
+                SectionGroup {
                     Text(
                         stringResource(
                             when (keyStatus) {
@@ -199,31 +189,28 @@ fun KeysScreen(viewModel: MainViewModel, navigator: Navigator) {
                     if (ownPublicKey != null) {
                         val pem = remember(ownPublicKey) { KeyCodec.publicKeyToPem(ownPublicKey) }
                         InfoRow(stringResource(R.string.keys_public_key), stringResource(R.string.keys_id, keyId(ownPublicKey)))
-                        ActionRow(
-                            title = stringResource(R.string.keys_share_public),
-                            description = stringResource(R.string.keys_add_desc),
-                            icon = Icons.Outlined.Share,
+                        ButtonWithNote(
+                            label = stringResource(R.string.keys_share_public),
                             onClick = {
                                 val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, pem)
                                 context.startActivity(Intent.createChooser(send, resources.getString(R.string.keys_share_public)))
                             },
+                            note = stringResource(R.string.keys_add_desc),
+                            modifier = Modifier.inGroup(),
                         )
-                        ActionRow(
-                            title = stringResource(R.string.action_copy),
-                            icon = Icons.Outlined.ContentCopy,
+                        ButtonWithNote(
+                            label = stringResource(R.string.action_copy),
                             onClick = {
                                 context.getSystemService(ClipboardManager::class.java)
                                     ?.setPrimaryClip(ClipData.newPlainText(resources.getString(R.string.keys_public_key), pem))
                                 // Android 13 and later confirm copies themselves.
                                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) viewModel.emit(UiMessage(resources.getString(R.string.copied)))
                             },
+                            modifier = Modifier.inGroup(),
                         )
                     }
-                    ActionRow(
-                        title = stringResource(R.string.keys_check),
-                        icon = Icons.Outlined.VerifiedUser,
-                        busy = running == "session-info",
-                        enabled = ownPublicKey != null,
+                    ButtonWithNote(
+                        label = stringResource(R.string.keys_check),
                         onClick = {
                             viewModel.recheckPairing { paired ->
                                 when (paired) {
@@ -233,28 +220,31 @@ fun KeysScreen(viewModel: MainViewModel, navigator: Navigator) {
                                 }
                             }
                         },
+                        busy = running == "session-info",
+                        enabled = ownPublicKey != null,
+                        modifier = Modifier.inGroup(),
                     )
-                    ActionRow(
-                        title = stringResource(R.string.keys_pair_again),
-                        icon = Icons.Outlined.VpnKey,
+                    ButtonWithNote(
+                        label = stringResource(R.string.keys_pair_again),
                         onClick = { navigator.to(AddCarRoute) },
+                        modifier = Modifier.inGroup(),
                     )
                 }
 
                 SectionHeader(stringResource(R.string.keys_on_car))
-                SectionCard {
+                SectionGroup {
                     // Actions first: loading or removing keys changes only the list below them.
-                    ActionRow(
-                        title = stringResource(R.string.keys_load),
-                        icon = Icons.Outlined.Refresh,
-                        busy = running == "list-keys",
+                    ButtonWithNote(
+                        label = stringResource(R.string.keys_load),
                         onClick = { loadKeys() },
+                        busy = running == "list-keys",
+                        modifier = Modifier.inGroup(),
                     )
-                    ActionRow(
-                        title = stringResource(R.string.keys_add),
-                        description = stringResource(R.string.keys_add_desc),
-                        icon = Icons.Outlined.Add,
+                    ButtonWithNote(
+                        label = stringResource(R.string.keys_add),
                         onClick = { navigator.to(CommandRoute("add-key")) },
+                        note = stringResource(R.string.keys_add_desc),
+                        modifier = Modifier.inGroup(),
                     )
                     val list = carKeys
                     if (list == null) {
@@ -267,42 +257,41 @@ fun KeysScreen(viewModel: MainViewModel, navigator: Navigator) {
                     }
                     list?.forEach { entry ->
                         val own = ownPublicKey != null && entry.publicKey.contentEquals(ownPublicKey)
-                        ActionRow(
+                        ItemRow(
                             title = listOfNotNull(
                                 stringResource(R.string.keys_slot, entry.slot),
                                 roleLabel(entry.role),
                                 stringResource(R.string.keys_this_phone_marker).takeIf { own },
                             ).joinToString(" · "),
                             description = "${formFactorLabel(entry.formFactor)} · ${stringResource(R.string.keys_id, keyId(entry.publicKey))}",
-                            icon = Icons.Outlined.Key,
-                            trailing = stringResource(R.string.action_remove),
+                            actionLabel = stringResource(R.string.action_remove),
+                            onAction = { removing = entry },
                             busy = running == "remove-key",
-                            onClick = { removing = entry },
                         )
                     }
                 }
 
                 SectionHeader(stringResource(R.string.keys_advanced))
-                SectionCard {
-                    ActionRow(
-                        title = stringResource(R.string.keys_import),
-                        description = stringResource(R.string.keys_import_desc),
-                        icon = Icons.Outlined.FileOpen,
+                SectionGroup {
+                    ButtonWithNote(
+                        label = stringResource(R.string.keys_import),
                         onClick = { dialog = KeyDialog.IMPORT },
+                        note = stringResource(R.string.keys_import_desc),
+                        modifier = Modifier.inGroup(),
                     )
-                    ActionRow(
-                        title = stringResource(R.string.keys_export_private),
-                        description = stringResource(R.string.keys_export_warning),
-                        icon = Icons.Outlined.Save,
-                        enabled = ownPublicKey != null,
+                    ButtonWithNote(
+                        label = stringResource(R.string.keys_export_private),
                         onClick = { dialog = KeyDialog.EXPORT },
+                        note = stringResource(R.string.keys_export_warning),
+                        enabled = ownPublicKey != null,
+                        modifier = Modifier.inGroup(),
                     )
-                    ActionRow(
-                        title = stringResource(R.string.keys_new),
-                        description = stringResource(R.string.keys_new_warning),
-                        icon = Icons.Outlined.Autorenew,
-                        destructive = true,
+                    ButtonWithNote(
+                        label = stringResource(R.string.keys_new),
                         onClick = { dialog = KeyDialog.NEW },
+                        note = stringResource(R.string.keys_new_warning),
+                        destructive = true,
+                        modifier = Modifier.inGroup(),
                     )
                 }
                 Spacer(Modifier.size(24.dp))

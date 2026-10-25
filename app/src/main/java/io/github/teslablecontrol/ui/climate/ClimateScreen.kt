@@ -1,16 +1,7 @@
 package io.github.teslablecontrol.ui.climate
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Masks
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +14,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tesla.generated.carserver.common.Common
@@ -36,16 +26,17 @@ import io.github.teslablecontrol.protocol.vehicle.StateCategory
 import io.github.teslablecontrol.ui.CommandRoute
 import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
-import io.github.teslablecontrol.ui.components.ActionRow
+import io.github.teslablecontrol.ui.commands.onOff
+import io.github.teslablecontrol.ui.components.ButtonWithNote
 import io.github.teslablecontrol.ui.components.ChoiceRow
 import io.github.teslablecontrol.ui.components.InfoRow
+import io.github.teslablecontrol.ui.components.ItemRow
 import io.github.teslablecontrol.ui.components.MainScreenFrame
-import io.github.teslablecontrol.ui.components.SectionCard
+import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.SectionHeader
 import io.github.teslablecontrol.ui.components.SliderControl
-import io.github.teslablecontrol.ui.components.Stepper
+import io.github.teslablecontrol.ui.components.TeslaButton
 import io.github.teslablecontrol.ui.components.ToggleRow
-import io.github.teslablecontrol.ui.commands.onOff
 import io.github.teslablecontrol.ui.format.Units
 import io.github.teslablecontrol.ui.format.celsiusFrom
 import io.github.teslablecontrol.ui.format.daysText
@@ -57,29 +48,62 @@ import kotlin.math.roundToInt
 
 private val CLIMATE_CATEGORIES = listOf(StateCategory.CLIMATE, StateCategory.PRECONDITIONING_SCHEDULE)
 
-/** A seat heater: the catalog's seat id, its label, and how to read its level from the car. */
-private class Seat(val id: String, val label: String, val read: (Vehicle.ClimateState) -> Int?, val rearOnly: Boolean = false, val thirdRow: Boolean = false, val back: Boolean = false)
+/**
+ * A seat heater: the catalog's seat id, its label, how to read its level from the car, and which
+ * side of the car it's on (-1 left, 0 centre, 1 right).
+ */
+private class Seat(
+    val id: String,
+    val label: String,
+    val read: (Vehicle.ClimateState) -> Int?,
+    val side: Int,
+    val rearOnly: Boolean = false,
+    val thirdRow: Boolean = false,
+    val back: Boolean = false,
+)
 
 private val SEATS = listOf(
-    Seat("front-left", "Front left seat", { c -> c.takeIf { it.hasSeatHeaterLeft() }?.seatHeaterLeft }),
-    Seat("front-right", "Front right seat", { c -> c.takeIf { it.hasSeatHeaterRight() }?.seatHeaterRight }),
-    Seat("2nd-row-left", "Rear left seat", { c -> c.takeIf { it.hasSeatHeaterRearLeft() }?.seatHeaterRearLeft }, rearOnly = true),
-    Seat("2nd-row-center", "Rear centre seat", { c -> c.takeIf { it.hasSeatHeaterRearCenter() }?.seatHeaterRearCenter }, rearOnly = true),
-    Seat("2nd-row-right", "Rear right seat", { c -> c.takeIf { it.hasSeatHeaterRearRight() }?.seatHeaterRearRight }, rearOnly = true),
-    Seat("2nd-row-left-back", "Rear left backrest", { c -> c.takeIf { it.hasSeatHeaterRearLeftBack() }?.seatHeaterRearLeftBack }, back = true),
-    Seat("2nd-row-right-back", "Rear right backrest", { c -> c.takeIf { it.hasSeatHeaterRearRightBack() }?.seatHeaterRearRightBack }, back = true),
-    Seat("3rd-row-left", "Third row left seat", { c -> c.takeIf { it.hasSeatHeaterThirdRowLeft() }?.seatHeaterThirdRowLeft }, thirdRow = true),
-    Seat("3rd-row-right", "Third row right seat", { c -> c.takeIf { it.hasSeatHeaterThirdRowRight() }?.seatHeaterThirdRowRight }, thirdRow = true),
+    Seat("front-left", "Front left", { c -> c.takeIf { it.hasSeatHeaterLeft() }?.seatHeaterLeft }, side = -1),
+    Seat("front-right", "Front right", { c -> c.takeIf { it.hasSeatHeaterRight() }?.seatHeaterRight }, side = 1),
+    Seat("2nd-row-left", "Rear left", { c -> c.takeIf { it.hasSeatHeaterRearLeft() }?.seatHeaterRearLeft }, side = -1, rearOnly = true),
+    Seat("2nd-row-center", "Rear centre", { c -> c.takeIf { it.hasSeatHeaterRearCenter() }?.seatHeaterRearCenter }, side = 0, rearOnly = true),
+    Seat("2nd-row-right", "Rear right", { c -> c.takeIf { it.hasSeatHeaterRearRight() }?.seatHeaterRearRight }, side = 1, rearOnly = true),
+    Seat("2nd-row-left-back", "Rear left backrest", { c -> c.takeIf { it.hasSeatHeaterRearLeftBack() }?.seatHeaterRearLeftBack }, side = -1, back = true),
+    Seat("2nd-row-right-back", "Rear right backrest", { c -> c.takeIf { it.hasSeatHeaterRearRightBack() }?.seatHeaterRearRightBack }, side = 1, back = true),
+    Seat("3rd-row-left", "Third row left", { c -> c.takeIf { it.hasSeatHeaterThirdRowLeft() }?.seatHeaterThirdRowLeft }, side = -1, thirdRow = true),
+    Seat("3rd-row-right", "Third row right", { c -> c.takeIf { it.hasSeatHeaterThirdRowRight() }?.seatHeaterThirdRowRight }, side = 1, thirdRow = true),
 )
 
-private val COP_ICONS = mapOf("off" to R.drawable.ic_action_off, "on" to R.drawable.ic_action_cop_on, "fan" to R.drawable.ic_action_cop_fan)
-private val COP_TEMP_ICONS = mapOf(
-    "low" to R.drawable.ic_action_temp_low, "medium" to R.drawable.ic_action_temp_medium, "high" to R.drawable.ic_action_temp_high,
+/** The front seats' cooling fans: the seat, and how to read its fan level from the car. */
+private val SEAT_FANS: List<Pair<Seat, (Vehicle.ClimateState) -> Int?>> = listOf(
+    SEATS[0] to { c -> c.takeIf { it.hasSeatFanFrontLeft() }?.seatFanFrontLeft },
+    SEATS[1] to { c -> c.takeIf { it.hasSeatFanFrontRight() }?.seatFanFrontRight },
 )
-private val KEEPER_ICONS = mapOf(
-    "off" to R.drawable.ic_action_off, "on" to R.drawable.ic_action_keeper_on,
-    "dog" to R.drawable.ic_action_keeper_dog, "camp" to R.drawable.ic_action_keeper_camp,
-)
+
+/** The seats the car reports a heater in, by seat id; it leaves out the others. */
+private fun Vehicle.ClimateState.heatedSeats() = SEATS.filter { it.read(this) != null }.mapTo(mutableSetOf()) { it.id }
+
+/** The seats the car reports a cooling fan in, by seat id. */
+private fun Vehicle.ClimateState.cooledSeats() =
+    SEAT_FANS.filter { (_, read) -> read(this) != null }.mapTo(mutableSetOf()) { (seat, _) -> seat.id }
+
+/**
+ * Regions where Tesla sells cars with the steering wheel on the right. The car doesn't report it,
+ * so the phone's region decides, as it does for units.
+ */
+private val RIGHT_HAND_DRIVE = setOf("GB", "IE", "AU", "NZ", "JP", "HK", "MO", "SG", "MY", "TH", "IN", "CY", "MT")
+
+/** Whose seat this is, so "front left" reads as "Driver". */
+private fun Seat.note(rightHandDrive: Boolean): String {
+    val driverSide = side == (if (rightHandDrive) 1 else -1)
+    return when {
+        side == 0 -> "Middle of the back seat"
+        thirdRow -> if (driverSide) "Third row, driver's side" else "Third row, passenger's side"
+        back -> if (driverSide) "Backrest behind the driver" else "Backrest behind the front passenger"
+        rearOnly -> if (driverSide) "Behind the driver" else "Behind the front passenger"
+        else -> if (driverSide) "Driver" else "Front passenger"
+    }
+}
 
 @Composable
 fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
@@ -90,13 +114,30 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
     val units = Units.resolve(settings?.units ?: UnitSystem.AUTO)
     val showAll = settings?.showAllControls == true
     val climate = state.snapshot.climate
-    val levels = listOf(0 to stringResource(R.string.level_off), 1 to stringResource(R.string.level_low), 2 to stringResource(R.string.level_medium), 3 to stringResource(R.string.level_high))
     val levelIds = listOf("off", "low", "medium", "high")
+    // The car's three heat levels, as on its own seat buttons.
+    val levelOptions = listOf(0 to stringResource(R.string.level_off), 1 to "1", 2 to "2", 3 to "3")
+    // The seat whose level is being sent, so only its slider shows progress.
+    var sendingSeat by remember { mutableStateOf<String?>(null) }
+    // Likewise the side whose automatic seat climate is being set ("L" or "R").
+    var sendingAutoSeat by remember { mutableStateOf<String?>(null) }
+    val rightHandDrive = Locale.getDefault().country in RIGHT_HAND_DRIVE
 
-    LaunchedEffect(profile?.vin) { viewModel.refresh(CLIMATE_CATEGORIES) }
+    @Composable
+    fun SeatLevelRow(seat: Seat, level: Int?, command: String) = ChoiceRow(
+        title = seat.label,
+        description = seat.note(rightHandDrive),
+        options = levelOptions,
+        selected = level,
+        onSelect = { value ->
+            sendingSeat = seat.id
+            viewModel.send(command, mapOf("SEAT" to seat.id, "LEVEL" to levelIds[value]))
+        },
+        busy = running == command && sendingSeat == seat.id,
+    )
 
-    MainScreenFrame(viewModel, navigator, stringResource(R.string.climate_title), onRefresh = { viewModel.refresh(CLIMATE_CATEGORIES) }) {
-        SectionCard {
+    MainScreenFrame(viewModel, navigator, stringResource(R.string.climate_title), CLIMATE_CATEGORIES) {
+        SectionGroup {
             InfoRow(stringResource(R.string.home_inside), units.temperature(state.snapshot.insideTempCelsius))
             InfoRow(stringResource(R.string.home_outside), units.temperature(state.snapshot.outsideTempCelsius))
             ToggleRow(
@@ -104,7 +145,6 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                 description = stringResource(if (state.snapshot.isClimateOn == true) R.string.climate_power_on_desc else R.string.climate_power_off_desc),
                 descriptions = listOf(stringResource(R.string.climate_power_on_desc), stringResource(R.string.climate_power_off_desc)),
                 checked = state.snapshot.isClimateOn,
-                icon = painterResource(R.drawable.ic_action_climate),
                 busy = running == "climate-on" || running == "climate-off",
                 onCheckedChange = { on -> viewModel.send(if (on) "climate-on" else "climate-off") },
             )
@@ -113,61 +153,38 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
         TemperatureCard(viewModel, units, climate, running == "climate-set-temp")
 
         SectionHeader(stringResource(R.string.climate_seats))
-        val levelNames = listOf(
-            stringResource(R.string.level_off), stringResource(R.string.level_low),
-            stringResource(R.string.level_medium), stringResource(R.string.level_high),
-        )
-        val frontLabel = stringResource(R.string.climate_front)
-        SectionCard {
-            val visible = SEATS.filter { seat ->
-                val known = climate?.let(seat.read) != null
-                when {
-                    showAll || known -> true
-                    seat.thirdRow -> profile?.model == CarModel.MODEL_X || profile?.model == CarModel.MODEL_Y
-                    seat.back -> false
-                    seat.rearOnly -> climate == null
-                    else -> true
-                }
-            }.associateBy { it.id }
-            fun row(vararg ids: String) = ids.mapNotNull { visible[it] }.map { PlanSeat(it.id, it.label, climate?.let(it.read)) }
-            val rows = listOf(
-                row("front-left", "front-right"),
-                row("2nd-row-left", "2nd-row-center", "2nd-row-right"),
-                row("2nd-row-left-back", "2nd-row-right-back"),
-                row("3rd-row-left", "3rd-row-right"),
-            ).filter { it.isNotEmpty() }
-            SeatPlan(
-                rows = rows,
-                levelNames = levelNames,
-                heating = true,
-                onSet = { id, level -> viewModel.send("seat-heater", mapOf("SEAT" to id, "LEVEL" to levelIds[level])) },
-                frontLabel = frontLabel,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+        // The car leaves out the seats it has no heater or fan in. What it last said is kept, so a sleeping
+        // car shows the same seats; before the first read, the heated seats most cars of its model have,
+        // and no fans.
+        LaunchedEffect(climate) {
+            climate?.let { c -> viewModel.rememberSeats(heated = c.heatedSeats(), cooled = c.cooledSeats()) }
+        }
+        val heatedSeats = climate?.heatedSeats() ?: profile?.heatedSeats
+        val cooledSeats = climate?.cooledSeats() ?: profile?.cooledSeats
+        val visible = SEATS.filter { seat ->
+            when {
+                showAll -> true
+                heatedSeats != null -> seat.id in heatedSeats
+                seat.thirdRow -> profile?.model == CarModel.MODEL_X || profile?.model == CarModel.MODEL_Y
+                seat.back -> false
+                else -> true
+            }
+        }
+        // One seat per row, front to back, each saying whose seat it is.
+        SectionGroup {
+            visible.forEach { seat -> SeatLevelRow(seat, climate?.let(seat.read), "seat-heater") }
         }
 
-        val hasCooling = climate?.hasSeatFanFrontLeft() == true || showAll
-        if (hasCooling) {
+        val fans = SEAT_FANS.filter { (seat, _) -> showAll || cooledSeats?.contains(seat.id) == true }
+        if (fans.isNotEmpty()) {
             SectionHeader(stringResource(R.string.climate_seat_cooling))
-            SectionCard {
-                SeatPlan(
-                    rows = listOf(
-                        listOf(
-                            PlanSeat("front-left", SEATS[0].label, climate?.takeIf { it.hasSeatFanFrontLeft() }?.seatFanFrontLeft),
-                            PlanSeat("front-right", SEATS[1].label, climate?.takeIf { it.hasSeatFanFrontRight() }?.seatFanFrontRight),
-                        ),
-                    ),
-                    levelNames = levelNames,
-                    heating = false,
-                    onSet = { id, level -> viewModel.send("seat-cooler", mapOf("SEAT" to id, "LEVEL" to levelIds[level])) },
-                    frontLabel = frontLabel,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
+            SectionGroup {
+                fans.forEach { (seat, read) -> SeatLevelRow(seat, climate?.let(read), "seat-cooler") }
             }
         }
 
         SectionHeader(stringResource(R.string.climate_title))
-        SectionCard {
+        SectionGroup {
             val wheelLevel = climate?.takeIf { it.hasSteeringWheelHeatLevel() }?.steeringWheelHeatLevel
             val wheelAuto = climate?.takeIf { it.hasAutoSteeringWheelHeat() }?.autoSteeringWheelHeat == true
             val wheelState = stringResource(
@@ -188,7 +205,6 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                 description = "$wheelState\n${stringResource(R.string.climate_steering_note)}",
                 checked = climate?.takeIf { it.hasSteeringWheelHeater() }?.steeringWheelHeater
                     ?: wheelLevel?.let { it == Common.StwHeatLevel.StwHeatLevel_Low || it == Common.StwHeatLevel.StwHeatLevel_High },
-                icon = painterResource(R.drawable.ic_action_steering_heat),
                 busy = running == "steering-wheel-heater",
                 onCheckedChange = { on -> viewModel.send("steering-wheel-heater", mapOf("STATE" to onOff(on))) },
             )
@@ -196,13 +212,13 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                 title = stringResource(R.string.climate_defrost),
                 description = stringResource(R.string.climate_defrost_desc),
                 checked = climate?.takeIf { it.hasDefrostMode() }?.defrostMode?.typeCase?.let { it == Vehicle.ClimateState.DefrostMode.TypeCase.MAX },
-                icon = painterResource(R.drawable.ic_action_defrost),
                 busy = running == "preconditioning-max",
                 onCheckedChange = { on -> viewModel.send("preconditioning-max", mapOf("STATE" to onOff(on))) },
             )
             ChoiceRow(
                 title = stringResource(R.string.climate_keeper),
-                options = listOf("off" to "Off", "on" to "Keep on", "dog" to "Dog mode", "camp" to "Camp mode"),
+                // Short, so four fit side by side; the title says what they keep.
+                options = listOf("off" to "Off", "on" to "On", "dog" to "Dog", "camp" to "Camp"),
                 // The car leaves the mode out when climate keeping is off.
                 selected = climate?.let {
                     when (it.climateKeeperMode.typeCase) {
@@ -212,8 +228,7 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                         else -> "off"
                     }
                 },
-                enabled = running != "climate-keeper",
-                icons = { mode -> KEEPER_ICONS[mode] },
+                busy = running == "climate-keeper",
                 onSelect = { mode -> viewModel.send("climate-keeper", mapOf("MODE" to mode)) },
             )
             ChoiceRow(
@@ -227,8 +242,7 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                         else -> null
                     }
                 },
-                enabled = running != "cabin-overheat-protection",
-                icons = { mode -> COP_ICONS[mode] },
+                busy = running == "cabin-overheat-protection",
                 onSelect = { mode ->
                     viewModel.send(
                         "cabin-overheat-protection",
@@ -247,8 +261,7 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                         else -> null
                     }
                 },
-                enabled = running != "cabin-overheat-protection-temp",
-                icons = { level -> COP_TEMP_ICONS[level] },
+                busy = running == "cabin-overheat-protection-temp",
                 onSelect = { level -> viewModel.send("cabin-overheat-protection-temp", mapOf("LEVEL" to level)) },
             )
             if (climate?.hasBioweaponModeOn() == true || showAll || profile?.model in setOf(CarModel.MODEL_S, CarModel.MODEL_X, CarModel.MODEL_Y)) {
@@ -256,7 +269,6 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                     title = stringResource(R.string.climate_bioweapon),
                     description = stringResource(R.string.climate_bioweapon_desc),
                     checked = climate?.takeIf { it.hasBioweaponModeOn() }?.bioweaponModeOn,
-                    icon = Icons.Outlined.Masks,
                     busy = running == "bioweapon-mode",
                     onCheckedChange = { on -> viewModel.send("bioweapon-mode", mapOf("STATE" to onOff(on))) },
                 )
@@ -264,31 +276,32 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
             ToggleRow(
                 title = stringResource(R.string.climate_auto_seat) + " (driver)",
                 checked = climate?.takeIf { it.hasAutoSeatClimateLeft() }?.autoSeatClimateLeft,
-                busy = running == "auto-seat-and-climate",
-                onCheckedChange = { on -> viewModel.send("auto-seat-and-climate", mapOf("POSITIONS" to "L", "STATE" to onOff(on))) },
+                busy = running == "auto-seat-and-climate" && sendingAutoSeat == "L",
+                onCheckedChange = { on ->
+                    sendingAutoSeat = "L"
+                    viewModel.send("auto-seat-and-climate", mapOf("POSITIONS" to "L", "STATE" to onOff(on)))
+                },
             )
             ToggleRow(
                 title = stringResource(R.string.climate_auto_seat) + " (passenger)",
                 checked = climate?.takeIf { it.hasAutoSeatClimateRight() }?.autoSeatClimateRight,
-                busy = running == "auto-seat-and-climate",
-                onCheckedChange = { on -> viewModel.send("auto-seat-and-climate", mapOf("POSITIONS" to "R", "STATE" to onOff(on))) },
+                busy = running == "auto-seat-and-climate" && sendingAutoSeat == "R",
+                onCheckedChange = { on ->
+                    sendingAutoSeat = "R"
+                    viewModel.send("auto-seat-and-climate", mapOf("POSITIONS" to "R", "STATE" to onOff(on)))
+                },
             )
         }
 
         SectionHeader(stringResource(R.string.climate_schedules))
-        SectionCard {
-            // Actions first: adding or removing schedules changes only the list below them.
-            ActionRow(
-                title = "Add precondition schedule",
-                icon = Icons.Outlined.Add,
-                onClick = { navigator.to(CommandRoute("precondition-schedule-add")) },
-            )
-            ActionRow(
-                title = "Scheduled departure",
-                description = "Precondition and charge to be ready at a time",
-                icon = Icons.Outlined.Schedule,
-                onClick = { navigator.to(CommandRoute("scheduled-departure")) },
-            )
+        // Actions first: adding or removing schedules changes only the list below them.
+        TeslaButton("Add precondition schedule", { navigator.to(CommandRoute("precondition-schedule-add")) }, Modifier.fillMaxWidth())
+        ButtonWithNote(
+            label = "Scheduled departure",
+            onClick = { navigator.to(CommandRoute("scheduled-departure")) },
+            note = "Precondition and charge to be ready at a time",
+        )
+        SectionGroup {
             val schedules = state.snapshot.preconditionSchedules?.preconditionSchedulesList.orEmpty()
             if (schedules.isEmpty()) {
                 Text(
@@ -299,12 +312,11 @@ fun ClimateScreen(viewModel: MainViewModel, navigator: Navigator) {
                 )
             }
             schedules.forEach { schedule ->
-                ActionRow(
+                ItemRow(
                     title = "${minutesToClock(schedule.preconditionTime)} · ${daysText(schedule.daysOfWeek)}",
                     description = (if (schedule.enabled) "Enabled" else "Disabled") + if (schedule.oneTime) " · once" else "",
-                    icon = Icons.Outlined.Delete,
-                    trailing = stringResource(R.string.action_remove),
-                    onClick = { viewModel.send("precondition-schedule-remove", mapOf("TYPE" to "id", "ID" to schedule.id.toString())) },
+                    actionLabel = stringResource(R.string.action_remove),
+                    onAction = { viewModel.send("precondition-schedule-remove", mapOf("TYPE" to "id", "ID" to schedule.id.toString())) },
                 )
             }
         }
@@ -349,11 +361,11 @@ private fun TemperatureCard(viewModel: MainViewModel, units: Units, climate: Veh
     }
 
     SectionHeader(stringResource(R.string.climate_temperature))
-    SectionCard {
+    SectionGroup {
         val driverLabel = stringResource(R.string.climate_driver)
         val passengerLabel = stringResource(R.string.climate_passenger)
         SliderControl(
-            title = if (together) stringResource(R.string.climate_temperature) else driverLabel,
+            title = if (together) stringResource(R.string.climate_both_seats) else driverLabel,
             valueText = text(driver),
             value = driver,
             onValueChange = {

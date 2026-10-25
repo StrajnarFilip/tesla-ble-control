@@ -1,23 +1,11 @@
 package io.github.teslablecontrol.ui.security
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material.icons.outlined.LockReset
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.teslablecontrol.R
@@ -37,17 +24,15 @@ import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
 import io.github.teslablecontrol.ui.commands.CommandInfos
 import io.github.teslablecontrol.ui.commands.onOff
-import io.github.teslablecontrol.ui.components.ActionRow
-import io.github.teslablecontrol.ui.components.ActionTile
+import io.github.teslablecontrol.ui.components.ButtonWithNote
 import io.github.teslablecontrol.ui.components.MainScreenFrame
 import io.github.teslablecontrol.ui.components.PinDialog
-import io.github.teslablecontrol.ui.components.SectionCard
+import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.SectionHeader
-import io.github.teslablecontrol.ui.components.SettingTile
+import io.github.teslablecontrol.ui.components.SettingRow
 import io.github.teslablecontrol.ui.components.SliderControl
-import io.github.teslablecontrol.ui.components.Stepper
-import io.github.teslablecontrol.ui.components.TileGrid
 import io.github.teslablecontrol.ui.components.ToggleRow
+import io.github.teslablecontrol.ui.components.inGroup
 import io.github.teslablecontrol.ui.format.Units
 import io.github.teslablecontrol.ui.format.speedFromMph
 import java.util.Locale
@@ -70,10 +55,10 @@ fun SecurityScreen(viewModel: MainViewModel, navigator: Navigator) {
     val closures = snapshot.closures
     // The command waiting for its PIN, if the PIN dialog is open.
     var pinFor by rememberSaveable { mutableStateOf<String?>(null) }
+    // The parental rule being sent, so only its switch shows progress; the rules share one command.
+    var sendingRule by remember { mutableStateOf<String?>(null) }
 
     fun busy(vararg ids: String) = running in ids
-
-    LaunchedEffect(profile?.vin) { viewModel.refresh(SECURITY_CATEGORIES) }
 
     pinFor?.let { commandId ->
         PinDialog(
@@ -86,14 +71,13 @@ fun SecurityScreen(viewModel: MainViewModel, navigator: Navigator) {
         )
     }
 
-    MainScreenFrame(viewModel, navigator, stringResource(R.string.security_title), onRefresh = { viewModel.refresh(SECURITY_CATEGORIES) }) {
+    MainScreenFrame(viewModel, navigator, stringResource(R.string.security_title), SECURITY_CATEGORIES) {
         SectionHeader(stringResource(R.string.security_modes))
-        SectionCard {
+        SectionGroup {
             ToggleRow(
                 title = stringResource(R.string.security_sentry),
                 description = stringResource(R.string.security_sentry_desc),
                 checked = snapshot.isSentryOn,
-                icon = painterResource(R.drawable.ic_action_sentry),
                 busy = busy("sentry-mode"),
                 onCheckedChange = { on -> viewModel.send("sentry-mode", mapOf("STATE" to onOff(on))) },
             )
@@ -101,27 +85,25 @@ fun SecurityScreen(viewModel: MainViewModel, navigator: Navigator) {
                 title = stringResource(R.string.security_valet),
                 description = stringResource(R.string.security_valet_desc),
                 checked = snapshot.isValetOn,
-                icon = Icons.Outlined.Person,
                 busy = busy("valet-mode-on", "valet-mode-off"),
                 onCheckedChange = { on -> if (on) pinFor = "valet-mode-on" else viewModel.send("valet-mode-off") },
             )
-            ActionRow(
-                title = stringResource(R.string.security_valet_reset),
-                icon = Icons.Outlined.LockReset,
-                busy = busy("valet-pin-reset"),
+            ButtonWithNote(
+                label = stringResource(R.string.security_valet_reset),
                 onClick = { viewModel.send("valet-pin-reset") },
+                busy = busy("valet-pin-reset"),
+                modifier = Modifier.inGroup(),
             )
         }
 
         SectionHeader(stringResource(R.string.security_speed_limit))
-        SectionCard {
+        SectionGroup {
             val mode = closures?.takeIf { it.hasSpeedLimitMode() }?.speedLimitMode
             val active = mode?.takeIf { it.hasActive() }?.active
             ToggleRow(
                 title = stringResource(R.string.security_speed_limit_mode),
                 description = stringResource(R.string.security_speed_limit_desc),
                 checked = active,
-                icon = painterResource(R.drawable.ic_action_speed_limit),
                 busy = busy("speed-limit-activate", "speed-limit-deactivate"),
                 onCheckedChange = { on -> pinFor = if (on) "speed-limit-activate" else "speed-limit-deactivate" },
             )
@@ -133,65 +115,59 @@ fun SecurityScreen(viewModel: MainViewModel, navigator: Navigator) {
                 busy = busy("speed-limit-set"),
                 onSet = { mph, done -> viewModel.send("speed-limit-set", mapOf("MPH" to String.format(Locale.ROOT, "%.2f", mph)), onResult = done) },
             )
-            ActionRow(
-                title = stringResource(R.string.security_clear_pin),
-                description = stringResource(R.string.security_clear_pin_desc),
-                icon = Icons.Outlined.LockReset,
-                busy = busy("speed-limit-clear-pin"),
+            ButtonWithNote(
+                label = stringResource(R.string.security_clear_pin),
                 onClick = { pinFor = "speed-limit-clear-pin" },
+                note = stringResource(R.string.security_clear_pin_desc),
+                busy = busy("speed-limit-clear-pin"),
+                modifier = Modifier.inGroup(),
             )
-            ActionRow(
-                title = stringResource(R.string.security_clear_pin_admin),
-                description = stringResource(R.string.security_owner_only),
-                icon = Icons.Outlined.LockReset,
-                busy = busy("speed-limit-clear-pin-admin"),
+            ButtonWithNote(
+                label = stringResource(R.string.security_clear_pin_admin),
                 onClick = { viewModel.send("speed-limit-clear-pin-admin") },
+                note = stringResource(R.string.security_owner_only),
+                busy = busy("speed-limit-clear-pin-admin"),
+                modifier = Modifier.inGroup(),
             )
         }
 
         SectionHeader(stringResource(R.string.security_pin))
-        SectionCard {
-            ActionRow(
-                title = stringResource(R.string.security_pin_to_drive_off),
-                description = stringResource(R.string.security_pin_to_drive_desc),
-                icon = Icons.Outlined.Key,
-                busy = busy("pin-to-drive-clear"),
+        SectionGroup {
+            ButtonWithNote(
+                label = stringResource(R.string.security_pin_to_drive_off),
                 onClick = { viewModel.send("pin-to-drive-clear") },
+                note = stringResource(R.string.security_pin_to_drive_desc),
+                busy = busy("pin-to-drive-clear"),
+                modifier = Modifier.inGroup(),
             )
         }
 
         SectionHeader(stringResource(R.string.security_guest))
         Text(stringResource(R.string.security_guest_desc), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        TileGrid { cell ->
-            SettingTile(
+        SectionGroup {
+            SettingRow(
                 name = stringResource(R.string.security_guest),
                 on = lastSet["guest-mode"],
-                onIcon = R.drawable.ic_action_guest,
-                offIcon = R.drawable.ic_action_guest_off,
                 onSet = { on -> viewModel.send(if (on) "guest-mode-on" else "guest-mode-off") },
-                modifier = cell,
                 busy = busy("guest-mode-on", "guest-mode-off"),
             )
-        }
-        SectionCard {
-            ActionRow(
-                title = stringResource(R.string.security_erase_guest),
-                icon = Icons.Outlined.Delete,
+            ButtonWithNote(
+                label = stringResource(R.string.security_erase_guest),
+                onClick = { viewModel.send("erase-guest-data") },
                 destructive = true,
                 busy = busy("erase-guest-data"),
-                onClick = { viewModel.send("erase-guest-data") },
+                modifier = Modifier.inGroup(),
             )
         }
 
         SectionHeader(stringResource(R.string.security_parental))
-        SectionCard {
+        SectionGroup {
             val parental = snapshot.parentalControls
             val rules = parental?.takeIf { it.hasParentalControlsSettings() }?.parentalControlsSettings
             ToggleRow(
                 title = stringResource(R.string.security_parental),
                 description = stringResource(R.string.security_parental_desc),
                 checked = parental?.takeIf { it.hasParentalControlsActive() }?.parentalControlsActive,
-                icon = painterResource(R.drawable.ic_action_parental),
                 busy = busy("parental-controls-on", "parental-controls-off"),
                 onCheckedChange = { on -> pinFor = if (on) "parental-controls-on" else "parental-controls-off" },
             )
@@ -217,27 +193,28 @@ fun SecurityScreen(viewModel: MainViewModel, navigator: Navigator) {
                 ToggleRow(
                     title = label,
                     checked = known[id],
-                    busy = busy("parental-controls-enable-setting"),
+                    busy = busy("parental-controls-enable-setting") && sendingRule == id,
                     onCheckedChange = { on ->
+                        sendingRule = id
                         viewModel.send("parental-controls-enable-setting", mapOf("SETTING" to id, "STATE" to onOff(on)))
                     },
                 )
             }
-            ActionRow(
-                title = stringResource(R.string.security_parental_clear),
-                description = stringResource(R.string.security_owner_only),
-                icon = Icons.Outlined.LockReset,
-                busy = busy("parental-controls-clear-pin-admin"),
+            ButtonWithNote(
+                label = stringResource(R.string.security_parental_clear),
                 onClick = { viewModel.send("parental-controls-clear-pin-admin") },
+                note = stringResource(R.string.security_owner_only),
+                busy = busy("parental-controls-clear-pin-admin"),
+                modifier = Modifier.inGroup(),
             )
         }
 
-        SectionCard {
-            ActionRow(
-                title = stringResource(R.string.security_keys),
-                description = stringResource(R.string.security_keys_desc),
-                icon = Icons.Outlined.Key,
+        SectionGroup {
+            ButtonWithNote(
+                label = stringResource(R.string.security_keys),
                 onClick = { navigator.to(KeysRoute) },
+                note = stringResource(R.string.security_keys_desc),
+                modifier = Modifier.inGroup(),
             )
         }
     }

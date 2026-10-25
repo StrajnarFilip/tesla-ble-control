@@ -10,6 +10,8 @@ import io.github.teslablecontrol.protocol.transport.Transport
 import io.github.teslablecontrol.protocol.vehicle.CommandResult
 import io.github.teslablecontrol.protocol.vehicle.KeyEntry
 import io.github.teslablecontrol.protocol.vehicle.StateCategory
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,8 +19,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
+
+/** The everyday charge limit the demo car reports, as most cars are set. */
+private const val STANDARD_LIMIT = 90
 
 /**
  * A pretend car for trying the app without a vehicle (and for UI tests). It behaves like the real
@@ -53,6 +56,9 @@ class DemoVehicleController(
     private var valet = false
     private val seatHeaters = mutableMapOf<String, Int>()
     private var steeringHeater = false
+    private var keeperMode = "off"
+    private var overheatProtection = Vehicle.ClimateState.CabinOverheatProtection_E.CabinOverheatProtectionOn
+    private var overheatTemp = Vehicle.ClimateState.CopActivationTemp.CopActivationTempHigh
     private var volume = 4f
     private var playing = true
 
@@ -120,7 +126,10 @@ class DemoVehicleController(
             }
             "charging-set-limit" -> limit = args.int("PERCENT")
             "charging-set-amps" -> amps = args.int("AMPS")
-            "charging-start", "charge-max-range", "charge-standard-range" -> if (!portOpen) {
+            // Like the car: these only set the limit.
+            "charge-max-range" -> limit = 100
+            "charge-standard-range" -> limit = STANDARD_LIMIT
+            "charging-start" -> if (!portOpen) {
                 return CommandOutcome.Failure(FailureKind.REFUSED, "cable not connected")
             } else {
                 charging = true
@@ -131,6 +140,17 @@ class DemoVehicleController(
             "valet-mode-off" -> valet = false
             "seat-heater" -> seatHeaters[args.string("SEAT")] = CommandCatalog.LEVELS.keys.indexOf(args.string("LEVEL").lowercase())
             "steering-wheel-heater" -> steeringHeater = args.onOff("STATE")
+            "climate-keeper" -> keeperMode = args.string("MODE").lowercase()
+            "cabin-overheat-protection" -> overheatProtection = when {
+                !args.onOff("STATE") -> Vehicle.ClimateState.CabinOverheatProtection_E.CabinOverheatProtectionOff
+                args.onOff("FAN_ONLY", default = false) -> Vehicle.ClimateState.CabinOverheatProtection_E.CabinOverheatProtectionFanOnly
+                else -> Vehicle.ClimateState.CabinOverheatProtection_E.CabinOverheatProtectionOn
+            }
+            "cabin-overheat-protection-temp" -> overheatTemp = when (args.string("LEVEL").lowercase()) {
+                "low" -> Vehicle.ClimateState.CopActivationTemp.CopActivationTempLow
+                "medium" -> Vehicle.ClimateState.CopActivationTemp.CopActivationTempMedium
+                else -> Vehicle.ClimateState.CopActivationTemp.CopActivationTempHigh
+            }
             "media-set-volume" -> volume = args.float("VOLUME")
             "media-volume-up" -> volume = (volume + 0.5f).coerceAtMost(10f)
             "media-volume-down" -> volume = (volume - 0.5f).coerceAtLeast(0f)
@@ -235,6 +255,13 @@ class DemoVehicleController(
         }
         val sentryState = Vehicle.ClosuresState.SentryModeState.newBuilder()
         if (sentry) sentryState.setArmed(void) else sentryState.setOff(void)
+        val keeperState = Vehicle.ClimateState.ClimateKeeperMode.newBuilder()
+        when (keeperMode) {
+            "on" -> keeperState.setOn(void)
+            "dog" -> keeperState.setDog(void)
+            "camp" -> keeperState.setParty(void)
+            else -> keeperState.setOff(void)
+        }
         when (category) {
             StateCategory.CHARGE -> data.setChargeState(
                 Vehicle.ChargeState.newBuilder()
@@ -244,6 +271,7 @@ class DemoVehicleController(
                     .setEstBatteryRange(battery * 3.0f)
                     .setChargeLimitSoc(limit)
                     .setChargeLimitSocMin(50)
+                    .setChargeLimitSocStd(STANDARD_LIMIT)
                     .setChargeLimitSocMax(100)
                     .setChargingAmps(amps)
                     .setChargeCurrentRequestMax(32)
@@ -267,7 +295,10 @@ class DemoVehicleController(
                     .setSeatHeaterRearLeft(seatHeaters["2nd-row-left"] ?: 0)
                     .setSeatHeaterRearCenter(seatHeaters["2nd-row-center"] ?: 0)
                     .setSeatHeaterRearRight(seatHeaters["2nd-row-right"] ?: 0)
-                    .setSteeringWheelHeater(steeringHeater),
+                    .setSteeringWheelHeater(steeringHeater)
+                    .setClimateKeeperMode(keeperState)
+                    .setCabinOverheatProtection(overheatProtection)
+                    .setCopActivationTemperature(overheatTemp),
             )
             StateCategory.CLOSURES -> data.setClosuresState(
                 Vehicle.ClosuresState.newBuilder()

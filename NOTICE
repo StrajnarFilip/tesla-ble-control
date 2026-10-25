@@ -20,9 +20,9 @@ Go pseudo-version v0.4.2-0.20261021222658-fc5a1910ad45.
 - tools/vehicle-sim builds a test-only vehicle simulator against vehicle-command's packages,
   including its internal authentication package. It is not part of the app.
 
-The app bundles the Barlow and Barlow Semi Condensed typefaces (app/src/main/res/font), Copyright
-2017 The Barlow Project Authors (https://github.com/jpt/barlow), licensed under the SIL Open Font
-License 1.1; see third_party/barlow/OFL.txt.
+The app bundles the Inter typeface (app/src/main/res/font), Copyright 2020 The Inter Project
+Authors (https://github.com/rsms/inter), licensed under the SIL Open Font License 1.1; see
+third_party/inter/OFL.txt.
 
 Tesla and the Tesla logo are trademarks of Tesla, Inc. This project is not affiliated with or
 endorsed by Tesla, Inc.

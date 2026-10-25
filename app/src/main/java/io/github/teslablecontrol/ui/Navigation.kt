@@ -5,11 +5,16 @@ package io.github.teslablecontrol.ui
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
@@ -22,16 +27,13 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -53,6 +55,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -67,7 +70,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import kotlinx.coroutines.flow.collectLatest
 import io.github.teslablecontrol.R
 import io.github.teslablecontrol.ble.BlePermissions
 import io.github.teslablecontrol.core.FailureKind
@@ -76,6 +78,9 @@ import io.github.teslablecontrol.ui.climate.ClimateScreen
 import io.github.teslablecontrol.ui.commands.AllCommandsScreen
 import io.github.teslablecontrol.ui.commands.CommandFormScreen
 import io.github.teslablecontrol.ui.components.ConfirmDialog
+import io.github.teslablecontrol.ui.components.DockItem
+import io.github.teslablecontrol.ui.components.SideMenuInsets
+import io.github.teslablecontrol.ui.components.TeslaDock
 import io.github.teslablecontrol.ui.components.windowWidth
 import io.github.teslablecontrol.ui.controls.ControlsScreen
 import io.github.teslablecontrol.ui.details.DetailsScreen
@@ -88,6 +93,7 @@ import io.github.teslablecontrol.ui.security.KeysScreen
 import io.github.teslablecontrol.ui.security.SecurityScreen
 import io.github.teslablecontrol.ui.settings.DiagnosticsScreen
 import io.github.teslablecontrol.ui.settings.SettingsScreen
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.serialization.Serializable
 
 @Serializable object HomeRoute
@@ -206,39 +212,23 @@ fun MainScaffold(viewModel: MainViewModel) {
         )
     }
 
-    Row(Modifier.fillMaxSize()) {
-        if (wide && currentTab != null) {
-            NavigationRail(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
-                TABS.forEach { tab ->
-                    NavigationRailItem(
-                        selected = tab == currentTab,
-                        onClick = { navigator.tab(tab.route) },
-                        icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { Text(stringResource(tab.label)) },
-                    )
-                }
-            }
+    Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val dockItems = TABS.map { tab ->
+            DockItem(stringResource(tab.label), tab.icon, selected = tab == currentTab, onClick = { navigator.tab(tab.route) })
+        }
+        val sideMenu = wide && currentTab != null
+        if (sideMenu) {
+            TeslaDock(dockItems, vertical = true)
         }
         Scaffold(
+            modifier = if (sideMenu) Modifier.consumeWindowInsets(SideMenuInsets.only(WindowInsetsSides.Start)) else Modifier,
             snackbarHost = { SnackbarHost(snackbar) },
             bottomBar = {
-                if (!wide && currentTab != null) {
-                    NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
-                        TABS.forEach { tab ->
-                            NavigationBarItem(
-                                selected = tab == currentTab,
-                                onClick = { navigator.tab(tab.route) },
-                                icon = { Icon(tab.icon, contentDescription = null) },
-                                label = { Text(stringResource(tab.label), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                alwaysShowLabel = true,
-                            )
-                        }
-                    }
-                }
+                if (!wide && currentTab != null) TeslaDock(dockItems)
             },
             containerColor = MaterialTheme.colorScheme.background,
         ) { padding ->
-            NavHost(navController, startDestination = HomeRoute, modifier = Modifier.padding(padding)) {
+            NavHost(navController, startDestination = HomeRoute, modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
                 composable<HomeRoute> { HomeScreen(viewModel, navigator) }
                 composable<ClimateRoute> { ClimateScreen(viewModel, navigator) }
                 composable<ChargingRoute> { ChargingScreen(viewModel, navigator) }
@@ -283,7 +273,9 @@ fun MainTopBar(viewModel: MainViewModel, navigator: Navigator, title: String) {
     val switchLabel = stringResource(R.string.action_switch_car)
     TopAppBar(
         title = {
-            Box {
+            // Moved back by the button's own padding, so the name lines up with the page's text.
+            val buttonPadding = ButtonDefaults.TextButtonContentPadding.calculateStartPadding(LocalLayoutDirection.current)
+            Box(Modifier.offset(x = -buttonPadding)) {
                 val switchable = (profiles?.size ?: 0) > 1 || settings?.demoMode == true
                 TextButton(
                     onClick = { if (switchable) menuOpen = true },

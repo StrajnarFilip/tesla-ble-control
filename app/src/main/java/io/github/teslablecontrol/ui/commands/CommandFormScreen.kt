@@ -4,7 +4,6 @@ package io.github.teslablecontrol.ui.commands
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,22 +23,14 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.VpnKey
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -84,17 +74,19 @@ import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
 import io.github.teslablecontrol.ui.TroubleshootingRoute
 import io.github.teslablecontrol.ui.UiMessage
+import io.github.teslablecontrol.ui.components.DialogButtons
 import io.github.teslablecontrol.ui.components.OptionChips
-import io.github.teslablecontrol.ui.components.StableText
+import io.github.teslablecontrol.ui.components.TeslaButton
+import io.github.teslablecontrol.ui.components.TeslaSlider
 import io.github.teslablecontrol.ui.format.FailureAction
 import io.github.teslablecontrol.ui.format.Units
 import io.github.teslablecontrol.ui.format.failureAction
 import io.github.teslablecontrol.ui.format.failureMessage
 import io.github.teslablecontrol.ui.format.temperatureValue
 import io.github.teslablecontrol.ui.troubleTopic
-import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 @Composable
 fun CommandFormScreen(viewModel: MainViewModel, navigator: Navigator, commandId: String) {
@@ -163,35 +155,32 @@ private fun CommandForm(viewModel: MainViewModel, navigator: Navigator, spec: Co
             spec.params.forEach { param ->
                 ParamField(param, values[param.name], units, onChange = { set(param.name, it) })
                 if (param.type == ParamType.PublicKey && ownKeyHex != null) {
-                    OutlinedButton(onClick = { set(param.name, ownKeyHex) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                        Icon(Icons.Outlined.VpnKey, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.commands_use_own_key))
-                    }
+                    TeslaButton(
+                        label = stringResource(R.string.commands_use_own_key),
+                        onClick = { set(param.name, ownKeyHex) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
                 if (param.type == ParamType.Longitude) {
-                    OutlinedButton(
+                    val readingLocation = stringResource(R.string.commands_reading_location)
+                    val useLocation = stringResource(R.string.commands_use_car_location)
+                    TeslaButton(
+                        label = if (locating) readingLocation else useLocation,
                         onClick = {
                             locating = true
                             if (location == null) viewModel.refresh(listOf(StateCategory.LOCATION), wake = true)
                         },
-                        enabled = !locating,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                    ) {
-                        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
-                            if (locating) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Icon(Icons.Outlined.MyLocation, contentDescription = null)
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        StableText(
-                            stringResource(if (locating) R.string.commands_reading_location else R.string.commands_use_car_location),
-                            listOf(stringResource(R.string.commands_reading_location), stringResource(R.string.commands_use_car_location)),
-                        )
-                    }
+                        busy = locating,
+                        labels = listOf(readingLocation, useLocation),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
 
             val busy = running == spec.id
-            Button(
+            // The command's own button, in the car's confirm style.
+            TeslaButton(
+                label = info.title,
                 onClick = {
                     problem = validate(spec, values)
                     if (problem == null) {
@@ -199,15 +188,10 @@ private fun CommandForm(viewModel: MainViewModel, navigator: Navigator, spec: Co
                         viewModel.send(spec.id, values) { outcome = it }
                     }
                 },
-                enabled = !busy,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            ) {
-                if (busy) {
-                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                    Spacer(Modifier.width(12.dp))
-                }
-                Text(info.title)
-            }
+                outlined = true,
+                busy = busy,
+                modifier = Modifier.fillMaxWidth(),
+            )
             problem?.let {
                 Text(
                     it,
@@ -218,7 +202,7 @@ private fun CommandForm(viewModel: MainViewModel, navigator: Navigator, spec: Co
             }
 
             outcome?.let { result ->
-                ResultCard(
+                ResultSection(
                     result,
                     successText = info.successText,
                     failureText = (result as? CommandOutcome.Failure)?.let { failureMessage(context, it) },
@@ -239,46 +223,44 @@ private fun CommandForm(viewModel: MainViewModel, navigator: Navigator, spec: Co
 
 /** What a command returned, in words, with the raw data for state reads. */
 @Composable
-private fun ResultCard(outcome: CommandOutcome, successText: String, failureText: String?, onAction: (FailureAction) -> Unit) {
+private fun ResultSection(outcome: CommandOutcome, successText: String, failureText: String?, onAction: (FailureAction) -> Unit) {
     val failure = outcome as? CommandOutcome.Failure
-    Card(
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = if (failure != null && !failure.mayHaveSucceeded) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainer,
-        ),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.commands_result), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
-            when (outcome) {
-                is CommandOutcome.Success -> {
-                    Text(
-                        when (outcome.result) {
-                            CommandResult.Sent -> stringResource(R.string.commands_sent)
-                            else -> successText
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    resultDetails(outcome.result)?.let { details ->
-                        SelectionContainer {
-                            Text(details, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
-                        }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            stringResource(R.string.commands_result),
+            style = MaterialTheme.typography.titleSmall,
+            // Straight on the page; a failure that certainly didn't go through shows in the heading's colour.
+            color = if (failure != null && !failure.mayHaveSucceeded) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.semantics { heading() },
+        )
+        when (outcome) {
+            is CommandOutcome.Success -> {
+                Text(
+                    when (outcome.result) {
+                        CommandResult.Sent -> stringResource(R.string.commands_sent)
+                        else -> successText
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                resultDetails(outcome.result)?.let { details ->
+                    SelectionContainer {
+                        Text(details, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
                     }
                 }
-                is CommandOutcome.Failure -> {
-                    Text(failureText ?: outcome.message, style = MaterialTheme.typography.bodyLarge)
-                    val action = failureAction(outcome)
-                    if (action != null) {
-                        val label = stringResource(
-                            when (action) {
-                                FailureAction.PAIR -> R.string.action_pair
-                                FailureAction.WAKE -> R.string.action_wake
-                                FailureAction.RETRY -> R.string.action_retry
-                                else -> R.string.action_help
-                            },
-                        )
-                        Button(onClick = { onAction(action) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(label) }
-                    }
+            }
+            is CommandOutcome.Failure -> {
+                Text(failureText ?: outcome.message, style = MaterialTheme.typography.bodyLarge)
+                val action = failureAction(outcome)
+                if (action != null) {
+                    val label = stringResource(
+                        when (action) {
+                            FailureAction.PAIR -> R.string.action_pair
+                            FailureAction.WAKE -> R.string.action_wake
+                            FailureAction.RETRY -> R.string.action_retry
+                            else -> R.string.action_help
+                        },
+                    )
+                    TeslaButton(label, onClick = { onAction(action) })
                 }
             }
         }
@@ -339,19 +321,21 @@ private fun ParamField(param: ParamSpec, value: String?, units: Units, onChange:
     val label = ParamLabels.label(param.name).let { if (!param.required && param.default == null) stringResource(R.string.commands_optional, it) else it }
     when (val type = param.type) {
         ParamType.OnOff -> Labelled(label) {
-            OptionChips(
+            TeslaSlider(
                 options = listOf("on" to stringResource(R.string.word_on), "off" to stringResource(R.string.word_off)),
                 selected = value?.lowercase(),
                 onSelect = { onChange(it) },
-                icons = { if (it == "on") R.drawable.ic_action_on else R.drawable.ic_action_off },
             )
         }
         is ParamType.Choice -> Labelled(label) {
-            OptionChips(
-                options = type.options.map { it to choiceLabel(param.name, it) },
-                selected = value?.let { v -> type.options.firstOrNull { it.equals(v, ignoreCase = true) } },
-                onSelect = { onChange(it) },
-            )
+            val options = type.options.map { it to choiceLabel(param.name, it) }
+            val selected = value?.let { v -> type.options.firstOrNull { it.equals(v, ignoreCase = true) } }
+            // More than four don't fit side by side on a phone.
+            if (options.size <= 4) {
+                TeslaSlider(options, selected, onSelect = { onChange(it) })
+            } else {
+                OptionChips(options, selected, onSelect = { onChange(it) })
+            }
         }
         is ParamType.Integer -> NumberField(label, value, onChange, decimal = false, hint = stringResource(R.string.commands_range, type.min.toString(), type.max.toString()))
         is ParamType.Decimal -> NumberField(label, value, onChange, decimal = true, hint = stringResource(R.string.commands_range, formatNumber(type.min), formatNumber(type.max)))
@@ -480,20 +464,17 @@ private fun TimeField(label: String, value: String?, onChange: (String?) -> Unit
             is24Hour = true,
         )
         Dialog(onDismissRequest = { picking = false }) {
-            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer) {
                 Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 16.dp))
                     TimePicker(state = picker)
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        TextButton(onClick = { picking = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.action_cancel)) }
-                        TextButton(
-                            onClick = {
-                                picking = false
-                                onChange(String.format(Locale.ROOT, "%02d:%02d", picker.hour, picker.minute))
-                            },
-                            modifier = Modifier.heightIn(min = 48.dp),
-                        ) { Text(stringResource(R.string.action_done)) }
-                    }
+                    DialogButtons(
+                        stringResource(R.string.action_cancel), { picking = false },
+                        stringResource(R.string.action_done), {
+                            picking = false
+                            onChange(String.format(Locale.ROOT, "%02d:%02d", picker.hour, picker.minute))
+                        },
+                    )
                 }
             }
         }
@@ -517,7 +498,7 @@ private fun DaysField(value: String?, onChange: (String?) -> Unit) {
     }.toSet()
     fun save(days: Set<String>) = onChange(DAY_NAMES.map { it.first }.filter { it in days }.joinToString(",").ifEmpty { null })
 
-    OptionChips(
+    TeslaSlider(
         options = listOf("all" to stringResource(R.string.commands_days_all), "weekdays" to stringResource(R.string.commands_days_weekdays)),
         selected = when (selected) {
             DAY_NAMES.map { it.first }.toSet() -> "all"

@@ -5,9 +5,9 @@ import androidx.compose.ui.graphics.Color
 import io.github.teslablecontrol.ui.theme.DarkColors
 import io.github.teslablecontrol.ui.theme.LightColors
 import io.github.teslablecontrol.ui.theme.Palette
+import kotlin.math.pow
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.math.pow
 
 /** WCAG 2.1: 4.5:1 for text, 3:1 for icons and control outlines. */
 class ThemeContrastTest {
@@ -27,6 +27,8 @@ class ThemeContrastTest {
         "onSurface/surfaceContainer" to (s.onSurface to s.surfaceContainer),
         "onSurface/surfaceContainerHigh" to (s.onSurface to s.surfaceContainerHigh),
         "onSurface/surfaceContainerHighest" to (s.onSurface to s.surfaceContainerHighest),
+        // The chosen option of a segmented slider.
+        "onSurface/surfaceBright" to (s.onSurface to s.surfaceBright),
         "onSurfaceVariant/background" to (s.onSurfaceVariant to s.background),
         "onSurfaceVariant/surfaceContainer" to (s.onSurfaceVariant to s.surfaceContainer),
         "onSurfaceVariant/surfaceContainerHigh" to (s.onSurfaceVariant to s.surfaceContainerHigh),

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,16 +20,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,13 +39,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import io.github.teslablecontrol.AppContainer
 import io.github.teslablecontrol.R
 import io.github.teslablecontrol.core.ControllerState
 import io.github.teslablecontrol.core.LinkStatus
 import io.github.teslablecontrol.keys.KeyManager
+import io.github.teslablecontrol.protocol.vehicle.StateCategory
 import io.github.teslablecontrol.ui.AddCarRoute
 import io.github.teslablecontrol.ui.MainTopBar
 import io.github.teslablecontrol.ui.MainViewModel
@@ -54,19 +57,48 @@ import io.github.teslablecontrol.ui.format.bannerDetail
 import io.github.teslablecontrol.ui.format.bannerTitle
 import io.github.teslablecontrol.ui.format.bannerVariants
 import io.github.teslablecontrol.ui.theme.LocalStatusColors
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-/** The frame of the five main screens: top bar, status banner, pull-to-refresh, scrolling content. */
+/**
+ * The frame of the five main screens: top bar, status banner, pull-to-refresh, scrolling content.
+ * It reads [categories] from the car when the screen opens, on a pull, and again every few seconds
+ * (as set in Settings) while the app is on screen; those periodic reads never wake the car and
+ * aren't shown as activity. Only a pull brings down the pull-to-refresh circle; other reads show in
+ * the status banner alone.
+ */
 @Composable
 fun MainScreenFrame(
     viewModel: MainViewModel,
     navigator: Navigator,
     title: String,
-    onRefresh: () -> Unit,
+    categories: List<StateCategory>,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val state by viewModel.controllerState.collectAsState()
     val keyStatus by viewModel.keyStatus.collectAsState()
     val profile by viewModel.profile.collectAsState()
+    val settings by viewModel.settings.collectAsState()
+    val checkingQuietly by viewModel.checkingQuietly.collectAsState()
+    val scope = rememberCoroutineScope()
+    // True from a pull until the read it started ends.
+    var pulled by remember { mutableStateOf(false) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(profile?.vin) { viewModel.refresh(categories) }
+    val checkSeconds = settings?.stateCheckSeconds ?: 0
+    LaunchedEffect(profile?.vin, checkSeconds) {
+        if (checkSeconds <= 0) return@LaunchedEffect
+        // Only while the app is on screen; the background connection does its own checks.
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                delay(checkSeconds.seconds)
+                viewModel.checkState(categories)
+            }
+        }
+    }
+    // A periodic check isn't shown as activity, so the screen stays calm while it runs.
+    val shownState = if (checkingQuietly && state.activity?.commandId in QUIET_CHECKS) state.copy(activity = null) else state
     val keyProblem = when {
         profile?.vin == AppContainer.DEMO_PROFILE.vin -> null
         keyStatus == KeyManager.Status.UNUSABLE -> R.string.home_key_unusable_title
@@ -78,8 +110,17 @@ fun MainScreenFrame(
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         PullToRefreshBox(
-            isRefreshing = state.activity?.commandId == "refresh",
-            onRefresh = onRefresh,
+            isRefreshing = pulled,
+            onRefresh = {
+                pulled = true
+                scope.launch {
+                    try {
+                        viewModel.refresh(categories)?.join()
+                    } finally {
+                        pulled = false
+                    }
+                }
+            },
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -92,10 +133,10 @@ fun MainScreenFrame(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     StatusBanner(
-                        state,
+                        shownState,
                         keyProblem = keyProblem?.let { stringResource(it) },
                         onConnect = { viewModel.refreshBody() },
-                        onRefresh = onRefresh,
+                        onRefresh = { viewModel.refresh(categories) },
                         onWake = { viewModel.send("wake") },
                         onPair = { navigator.to(AddCarRoute) },
                     )
@@ -106,6 +147,9 @@ fun MainScreenFrame(
         }
     }
 }
+
+/** What a periodic state check runs, by controller activity id. */
+private val QUIET_CHECKS = setOf("refresh", "body-controller-state")
 
 /**
  * Connection and car status in words, with a coloured dot as a secondary cue. Changes are announced
@@ -135,55 +179,49 @@ fun StatusBanner(
     val pair = stringResource(R.string.action_pair_short)
     val asleep = state.link == LinkStatus.CONNECTED && state.snapshot.isAsleep == true
     val (titles, details) = remember(context) { bannerVariants(context) }
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-        // The headline gets the full width; the sentence and the button share the second row. Each
-        // keeps room for its longest version, so the banner never resizes.
-        Column(
-            Modifier.padding(horizontal = 16.dp, vertical = 14.dp).semantics(mergeDescendants = false) {},
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-                Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
-                    if (state.activity != null) {
-                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.5.dp)
-                    } else {
-                        Box(Modifier.size(14.dp).background(dot, CircleShape))
-                    }
-                }
-                Spacer(Modifier.width(12.dp))
-                StableText(keyProblem ?: bannerTitle(context, state), titles, style = MaterialTheme.typography.titleMedium)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                StableText(
-                    if (keyProblem != null) stringResource(R.string.banner_detail_pair) else bannerDetail(context, state),
-                    details,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f).padding(start = 30.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                FilledTonalButton(
-                    onClick = when {
-                        keyProblem != null -> onPair
-                        state.link != LinkStatus.CONNECTED -> onConnect
-                        asleep -> onWake
-                        else -> onRefresh
-                    },
-                    enabled = state.activity == null || keyProblem != null,
-                    modifier = Modifier.heightIn(min = 48.dp),
-                ) {
-                    StableText(
-                        when {
-                            keyProblem != null -> pair
-                            state.link != LinkStatus.CONNECTED -> connect
-                            asleep -> wake
-                            else -> refresh
-                        },
-                        listOf(connect, refresh, wake, pair),
-                        textAlign = TextAlign.Center,
-                    )
+    // Straight on the page, like everything else. The headline gets the full width; the sentence and
+    // the button share the second row. Each keeps room for its longest version, so the banner never
+    // resizes.
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 8.dp).semantics(mergeDescendants = false) {},
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
+            Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+                if (state.activity != null) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.5.dp)
+                } else {
+                    Box(Modifier.size(14.dp).background(dot, CircleShape))
                 }
             }
+            Spacer(Modifier.width(12.dp))
+            StableText(keyProblem ?: bannerTitle(context, state), titles, style = MaterialTheme.typography.titleMedium)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            StableText(
+                if (keyProblem != null) stringResource(R.string.banner_detail_pair) else bannerDetail(context, state),
+                details,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).padding(start = 30.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            TeslaButton(
+                label = when {
+                    keyProblem != null -> pair
+                    state.link != LinkStatus.CONNECTED -> connect
+                    asleep -> wake
+                    else -> refresh
+                },
+                onClick = when {
+                    keyProblem != null -> onPair
+                    state.link != LinkStatus.CONNECTED -> onConnect
+                    asleep -> onWake
+                    else -> onRefresh
+                },
+                enabled = state.activity == null || keyProblem != null,
+                labels = listOf(connect, refresh, wake, pair),
+            )
         }
     }
 }

@@ -17,13 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Help
-import androidx.compose.material.icons.automirrored.outlined.ListAlt
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.ToggleOn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -55,12 +48,13 @@ import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
 import io.github.teslablecontrol.ui.TroubleshootingRoute
 import io.github.teslablecontrol.ui.UiMessage
-import io.github.teslablecontrol.ui.components.ActionRow
+import io.github.teslablecontrol.ui.components.ButtonWithNote
 import io.github.teslablecontrol.ui.components.ChoiceRow
 import io.github.teslablecontrol.ui.components.ConfirmDialog
-import io.github.teslablecontrol.ui.components.SectionCard
+import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.SectionHeader
 import io.github.teslablecontrol.ui.components.ToggleRow
+import io.github.teslablecontrol.ui.components.inGroup
 
 @Composable
 fun SettingsScreen(viewModel: MainViewModel, navigator: Navigator) {
@@ -117,31 +111,31 @@ fun SettingsScreen(viewModel: MainViewModel, navigator: Navigator) {
         ) {
             Column(Modifier.widthIn(max = 840.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionHeader(stringResource(R.string.settings_cars))
-                SectionCard {
+                SectionGroup {
                     Column(Modifier.selectableGroup()) {
                         profiles.orEmpty().forEach { car ->
                             CarRow(car, selected = !s.demoMode && car.vin == active?.vin, onSelect = { viewModel.selectVehicle(car.vin) })
                         }
                     }
-                    ActionRow(
-                        title = stringResource(R.string.settings_add_car),
-                        icon = Icons.Outlined.Add,
+                    ButtonWithNote(
+                        label = stringResource(R.string.settings_add_car),
                         onClick = { navigator.to(AddCarRoute) },
+                        modifier = Modifier.inGroup(),
                     )
                     val current = active?.takeIf { !s.demoMode && profiles.orEmpty().any { p -> p.vin == it.vin } }
                     if (current != null) {
-                        ActionRow(
-                            title = stringResource(R.string.settings_remove_car),
-                            description = current.name,
-                            icon = Icons.Outlined.Delete,
-                            destructive = true,
+                        ButtonWithNote(
+                            label = stringResource(R.string.settings_remove_car),
                             onClick = { removing = current },
+                            note = current.name,
+                            destructive = true,
+                            modifier = Modifier.inGroup(),
                         )
                     }
                 }
 
                 SectionHeader(stringResource(R.string.settings_connection))
-                SectionCard {
+                SectionGroup {
                     ToggleRow(
                         title = stringResource(R.string.settings_stay_connected),
                         description = stringResource(R.string.settings_stay_connected_desc),
@@ -165,10 +159,23 @@ fun SettingsScreen(viewModel: MainViewModel, navigator: Navigator) {
                         checked = s.autoWake,
                         onCheckedChange = { on -> update { it.copy(autoWake = on) } },
                     )
+                    ChoiceRow(
+                        title = stringResource(R.string.settings_state_check),
+                        description = stringResource(R.string.settings_state_check_desc),
+                        options = listOf(
+                            0 to stringResource(R.string.word_off),
+                            5 to "5 s",
+                            30 to "30 s",
+                            60 to "1 min",
+                            300 to "5 min",
+                        ),
+                        selected = s.stateCheckSeconds,
+                        onSelect = { seconds -> update { it.copy(stateCheckSeconds = seconds) } },
+                    )
                 }
 
                 SectionHeader(stringResource(R.string.settings_appearance))
-                SectionCard {
+                SectionGroup {
                     ChoiceRow(
                         title = stringResource(R.string.settings_theme),
                         description = stringResource(R.string.settings_theme_desc),
@@ -178,13 +185,6 @@ fun SettingsScreen(viewModel: MainViewModel, navigator: Navigator) {
                             ThemeMode.LIGHT to stringResource(R.string.settings_theme_light),
                         ),
                         selected = s.theme,
-                        icons = { mode ->
-                            when (mode) {
-                                ThemeMode.SYSTEM -> R.drawable.ic_action_theme_system
-                                ThemeMode.DARK -> R.drawable.ic_action_theme_dark
-                                ThemeMode.LIGHT -> R.drawable.ic_action_theme_light
-                            }
-                        },
                         onSelect = { mode -> update { it.copy(theme = mode) } },
                     )
                     ChoiceRow(
@@ -196,19 +196,12 @@ fun SettingsScreen(viewModel: MainViewModel, navigator: Navigator) {
                             UnitSystem.IMPERIAL to stringResource(R.string.settings_units_imperial),
                         ),
                         selected = s.units,
-                        icons = { units ->
-                            when (units) {
-                                UnitSystem.AUTO -> R.drawable.ic_action_units_auto
-                                UnitSystem.METRIC -> R.drawable.ic_action_units_metric
-                                UnitSystem.IMPERIAL -> R.drawable.ic_action_units_imperial
-                            }
-                        },
                         onSelect = { units -> update { it.copy(units = units) } },
                     )
                 }
 
                 SectionHeader(stringResource(R.string.settings_safety))
-                SectionCard {
+                SectionGroup {
                     ToggleRow(
                         title = stringResource(R.string.settings_confirm),
                         description = stringResource(R.string.settings_confirm_desc),
@@ -236,35 +229,35 @@ fun SettingsScreen(viewModel: MainViewModel, navigator: Navigator) {
                 }
 
                 SectionHeader(stringResource(R.string.settings_help))
-                SectionCard {
-                    ActionRow(
-                        title = stringResource(R.string.settings_guide),
-                        description = stringResource(R.string.settings_guide_desc),
-                        icon = Icons.AutoMirrored.Outlined.MenuBook,
+                SectionGroup {
+                    ButtonWithNote(
+                        label = stringResource(R.string.settings_guide),
                         onClick = { navigator.to(AddCarRoute) },
+                        note = stringResource(R.string.settings_guide_desc),
+                        modifier = Modifier.inGroup(),
                     )
-                    ActionRow(
-                        title = stringResource(R.string.settings_troubleshooting),
-                        description = stringResource(R.string.settings_troubleshooting_desc),
-                        icon = Icons.AutoMirrored.Outlined.Help,
+                    ButtonWithNote(
+                        label = stringResource(R.string.settings_troubleshooting),
                         onClick = { navigator.to(TroubleshootingRoute()) },
+                        note = stringResource(R.string.settings_troubleshooting_desc),
+                        modifier = Modifier.inGroup(),
                     )
-                    ActionRow(
-                        title = stringResource(R.string.settings_quick_tile),
-                        description = stringResource(R.string.settings_tile_desc),
-                        icon = Icons.Outlined.ToggleOn,
+                    ButtonWithNote(
+                        label = stringResource(R.string.settings_quick_tile),
                         onClick = { tileSetup = true },
+                        note = stringResource(R.string.settings_tile_desc),
+                        modifier = Modifier.inGroup(),
                     )
-                    ActionRow(
-                        title = stringResource(R.string.settings_diagnostics),
-                        description = stringResource(R.string.settings_diagnostics_desc),
-                        icon = Icons.AutoMirrored.Outlined.ListAlt,
+                    ButtonWithNote(
+                        label = stringResource(R.string.settings_diagnostics),
                         onClick = { navigator.to(DiagnosticsRoute) },
+                        note = stringResource(R.string.settings_diagnostics_desc),
+                        modifier = Modifier.inGroup(),
                     )
                 }
 
                 SectionHeader(stringResource(R.string.settings_about))
-                SectionCard {
+                SectionGroup {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleSmall)
                         if (version.isNotEmpty()) {

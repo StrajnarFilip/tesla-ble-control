@@ -41,6 +41,14 @@ data class VehicleProfile(
      * last set them, by command family.
      */
     val lastSet: Map<String, Boolean> = emptyMap(),
+    /**
+     * The seats the car reported heaters in when its climate was last read, by catalog seat id (the
+     * car leaves out seats without one, such as the rear seats of a Standard Model 3 or Y). Null until
+     * then.
+     */
+    val heatedSeats: Set<String>? = null,
+    /** Likewise the seats it reported cooling fans in. */
+    val cooledSeats: Set<String>? = null,
 )
 
 private val Context.profileDataStore: DataStore<Preferences> by preferencesDataStore(name = "vehicles")

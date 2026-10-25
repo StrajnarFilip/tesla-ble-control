@@ -19,22 +19,24 @@ import io.github.teslablecontrol.core.VehicleController
 import io.github.teslablecontrol.data.VehicleProfile
 import io.github.teslablecontrol.protocol.transport.Transport
 import io.github.teslablecontrol.ui.format.statusLine
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Keeps a Bluetooth connection to the selected car. Instead of scanning in the background (which
  * Android restricts), it lets Android reconnect to the remembered car whenever it comes into range.
- * It polls only the body controller, which never wakes the car.
+ * It reads only the body controller, which never wakes the car, as often as the state-check
+ * interval in Settings says.
  */
 class VehicleLinkService : LifecycleService() {
     private val app: AppContainer get() = container
@@ -107,9 +109,11 @@ class VehicleLinkService : LifecycleService() {
             }
             coroutineScope {
                 val poller = launch {
-                    while (true) {
-                        delay(60.seconds)
-                        controller.refreshBodyState()
+                    app.settings.settings.filterNotNull().map { it.stateCheckSeconds }.distinctUntilChanged().collectLatest { seconds ->
+                        while (seconds > 0) {
+                            delay(seconds.seconds)
+                            controller.refreshBodyState()
+                        }
                     }
                 }
                 controller.awaitDisconnected()

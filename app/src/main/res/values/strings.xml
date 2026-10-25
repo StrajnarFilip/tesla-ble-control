@@ -99,9 +99,6 @@
     <string name="home_charging_now">Charging</string>
     <string name="home_not_charging">Not charging</string>
     <string name="value_unknown">—</string>
-    <string name="home_frunk">Open frunk</string>
-    <string name="home_windows_vent">Vent windows</string>
-    <string name="home_windows_close">Close windows</string>
     <string name="home_flash">Flash lights</string>
     <string name="home_honk">Honk</string>
 
@@ -112,15 +109,13 @@
     <string name="state_closed">Closed</string>
     <string name="state_vented">Vented</string>
     <string name="state_unknown">Not known yet</string>
-    <string name="setting_unknown_body">The car doesn\'t report this setting. Which should it be?</string>
-    <string name="setting_turn_on">Turn on</string>
-    <string name="setting_turn_off">Turn off</string>
     <string name="setting_last_set_note">The car doesn\'t report these settings, so they show what this phone last set.</string>
+    <string name="closure_doors">Doors</string>
+    <string name="closure_frunk">Frunk</string>
     <string name="closure_trunk">Rear trunk</string>
     <string name="closure_tonneau">Tonneau cover</string>
     <string name="closure_windows">Windows</string>
     <string name="closure_sunroof">Sunroof</string>
-    <string name="closure_unknown_body">The car hasn\'t said yet whether it\'s open or closed. What should it do?</string>
 
     <!-- Climate -->
     <string name="climate_title">Climate</string>
@@ -130,11 +125,11 @@
     <string name="climate_temperature">Temperature</string>
     <string name="climate_driver">Driver</string>
     <string name="climate_passenger">Passenger</string>
+    <string name="climate_both_seats">Driver and passenger</string>
     <string name="climate_sync_passenger">Same for passenger</string>
     <string name="climate_decrease">Lower %1$s temperature</string>
     <string name="climate_increase">Raise %1$s temperature</string>
     <string name="climate_seats">Seat heating</string>
-    <string name="climate_front">Front of the car</string>
     <string name="climate_seat_cooling">Seat cooling</string>
     <string name="climate_steering_wheel">Steering wheel heater</string>
     <string name="climate_steering_level_1">Level 1</string>
@@ -184,10 +179,8 @@
     <string name="charging_mode_off">Off</string>
     <string name="charging_mode_start_at">Starts charging at %1$s</string>
     <string name="charging_mode_depart_by">Ready to leave at %1$s</string>
-    <string name="charging_to_standard">Everyday limit</string>
-    <string name="charging_to_max">Maximum (for trips)</string>
-    <string name="charging_port_open">Open charge port</string>
-    <string name="charging_port_close">Close charge port</string>
+    <string name="charging_to_standard_percent">Everyday (%1$d %%)</string>
+    <string name="charging_to_max_percent">Maximum (%1$d %%)</string>
     <string name="charging_schedule_start">Start charging at a set time</string>
     <string name="charging_schedule_off">Turn off scheduled charging</string>
     <string name="charging_departure_off">Turn off scheduled departure</string>
@@ -212,14 +205,12 @@
     <string name="controls_vehicle">Vehicle</string>
     <string name="controls_locks">Doors locked</string>
     <string name="controls_autosecure">Close doors and lock</string>
-    <string name="controls_autosecure_desc">Closes the falcon-wing doors, then locks</string>
     <string name="controls_homelink">HomeLink</string>
     <string name="controls_homelink_desc">Opens your garage door using the car\'s location</string>
     <string name="controls_homelink_nearby">The car is near a HomeLink device</string>
     <string name="controls_remote_start">Remote start</string>
     <string name="controls_remote_start_desc">Allows driving without a key for a short time</string>
     <string name="controls_rename">Rename car</string>
-    <string name="controls_install_update">Install the downloaded update</string>
     <string name="controls_update_status">Status</string>
     <string name="controls_update_available">Update %1$s is ready to install</string>
     <string name="controls_update_ready">An update is ready to install</string>
@@ -231,16 +222,10 @@
     <string name="controls_nothing_playing">Nothing playing</string>
     <string name="controls_volume_down">Lower the volume</string>
     <string name="controls_volume_up">Raise the volume</string>
-    <string name="controls_frunk_is_open">Frunk is open</string>
-    <string name="controls_frunk_close_by_hand">Close it by hand</string>
-    <string name="controls_trunk_open">Open trunk</string>
-    <string name="controls_trunk_close">Close trunk</string>
-    <string name="controls_tonneau_open">Open tonneau</string>
-    <string name="controls_tonneau_close">Close tonneau</string>
+    <string name="controls_frunk_note">Closes by hand</string>
     <string name="controls_tonneau_stop">Stop tonneau</string>
-    <string name="controls_sunroof_open">Open sunroof</string>
-    <string name="controls_sunroof_close">Close sunroof</string>
     <string name="controls_sunroof_other">Other sunroof position</string>
+    <string name="controls_sunroof_percent">%1$d %% open</string>
     <string name="controls_install_short">Install update</string>
     <string name="controls_cancel_short">Cancel installation</string>
     <string name="controls_ping_short">Test connection</string>
@@ -379,6 +364,8 @@
     <string name="settings_start_on_boot">Reconnect after the phone restarts</string>
     <string name="settings_auto_wake">Wake the car automatically</string>
     <string name="settings_auto_wake_desc">Climate, charging and similar commands need the car awake</string>
+    <string name="settings_state_check">Check the car\'s state</string>
+    <string name="settings_state_check_desc">How often the open screen reads the car again, and the background connection reads the locks and doors. These checks never wake a sleeping car.</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_system">Automatic</string>

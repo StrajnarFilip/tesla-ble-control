@@ -16,13 +16,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -31,24 +29,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.RadioButtonChecked
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
@@ -90,14 +86,17 @@ import io.github.teslablecontrol.keys.KeyManager
 import io.github.teslablecontrol.tile.LockTileService
 import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.UiMessage
+import io.github.teslablecontrol.ui.components.DialogButtons
 import io.github.teslablecontrol.ui.components.OptionChips
+import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.StableText
+import io.github.teslablecontrol.ui.components.TeslaButton
 import io.github.teslablecontrol.ui.components.ToggleRow
 import io.github.teslablecontrol.ui.format.failureMessage
 import io.github.teslablecontrol.ui.theme.LocalStatusColors
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
 
 private enum class Step { WELCOME, NEED, VIN, PERMISSIONS, FIND, ROLE, PAIR, DONE }
 
@@ -168,27 +167,20 @@ fun SetupGuideScreen(
                         }
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
         bottomBar = {
             if (step != Step.WELCOME) {
-                Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-                    Row(
-                        // Above the keyboard while typing, so Back and Next stay reachable.
-                        Modifier.fillMaxWidth().imePadding().navigationBarsPadding().padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        OutlinedButton(onClick = { back() }, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
-                            Text(stringResource(R.string.action_back))
-                        }
-                        Button(
-                            onClick = { if (step == Step.DONE) onFinished() else next() },
-                            enabled = canContinue,
-                            modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-                        ) {
-                            Text(stringResource(if (step == Step.DONE) R.string.guide_finish else R.string.action_next))
-                        }
-                    }
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    // Above the keyboard while typing, so Back and Next stay reachable.
+                    DialogButtons(
+                        stringResource(R.string.action_back), { back() },
+                        stringResource(if (step == Step.DONE) R.string.guide_finish else R.string.action_next),
+                        { if (step == Step.DONE) onFinished() else next() },
+                        modifier = Modifier.imePadding().navigationBarsPadding().padding(16.dp),
+                        confirmEnabled = canContinue,
+                    )
                 }
             }
         },
@@ -251,8 +243,8 @@ private fun WelcomeStep(onStart: () -> Unit, onTryDemo: () -> Unit) {
     Illustration(Picture.WELCOME, stringResource(R.string.guide_welcome_picture))
     StepTitle(stringResource(R.string.guide_welcome_title))
     Body(stringResource(R.string.guide_welcome_body))
-    Button(onClick = onStart, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) { Text(stringResource(R.string.guide_start)) }
-    OutlinedButton(onClick = onTryDemo, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) { Text(stringResource(R.string.guide_try_demo)) }
+    TeslaButton(stringResource(R.string.guide_start), onStart, Modifier.fillMaxWidth(), outlined = true)
+    TeslaButton(stringResource(R.string.guide_try_demo), onTryDemo, Modifier.fillMaxWidth())
 }
 
 @Composable
@@ -304,7 +296,8 @@ private fun VinStep(
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Next),
         modifier = Modifier.fillMaxWidth(),
     )
-    OutlinedButton(
+    TeslaButton(
+        label = stringResource(R.string.guide_vin_paste),
         onClick = {
             val copied = context.getSystemService(ClipboardManager::class.java)?.primaryClip
                 ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()
@@ -312,12 +305,7 @@ private fun VinStep(
             pasteFailed = found == null
             if (found != null) onVin(found)
         },
-        modifier = Modifier.heightIn(min = 52.dp),
-    ) {
-        Icon(Icons.Outlined.ContentPaste, contentDescription = null)
-        Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.guide_vin_paste))
-    }
+    )
     if (pasteFailed) {
         Text(
             stringResource(R.string.guide_vin_paste_none),
@@ -357,30 +345,38 @@ private fun PermissionsStep() {
     val grantedText = stringResource(R.string.guide_permission_granted)
     val neededText = stringResource(R.string.guide_permission_needed)
     StatusLine(if (granted) grantedText else neededText, granted, variants = listOf(grantedText, neededText))
-    Button(
+    TeslaButton(
+        label = stringResource(R.string.action_allow),
         onClick = { launcher.launch(BlePermissions.required.toTypedArray()) },
+        outlined = true,
         enabled = !granted,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-    ) { Text(stringResource(R.string.action_allow)) }
-    TextButton(onClick = {
-        context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)))
-    }) { Text(stringResource(R.string.guide_permission_settings)) }
+        modifier = Modifier.fillMaxWidth(),
+    )
+    TeslaButton(
+        label = stringResource(R.string.guide_permission_settings),
+        onClick = {
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)))
+        },
+        modifier = Modifier.fillMaxWidth(),
+    )
     val bluetoothOnText = stringResource(R.string.guide_bluetooth_on)
     val bluetoothOffText = stringResource(R.string.guide_bluetooth_off)
     StatusLine(if (bluetoothOn) bluetoothOnText else bluetoothOffText, bluetoothOn, variants = listOf(bluetoothOnText, bluetoothOffText))
-    OutlinedButton(
+    TeslaButton(
+        label = stringResource(R.string.action_turn_on_bluetooth),
         onClick = { BlePermissions.requestEnableBluetooth(context) },
         enabled = !bluetoothOn,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-    ) { Text(stringResource(R.string.action_turn_on_bluetooth)) }
+        modifier = Modifier.fillMaxWidth(),
+    )
     val locationOnText = stringResource(R.string.guide_location_on)
     val locationOffText = stringResource(R.string.guide_location_off)
     StatusLine(if (locationOn) locationOnText else locationOffText, locationOn, variants = listOf(locationOnText, locationOffText))
-    OutlinedButton(
+    TeslaButton(
+        label = stringResource(R.string.guide_turn_on_location),
         onClick = { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) },
         enabled = !locationOn,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-    ) { Text(stringResource(R.string.guide_turn_on_location)) }
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 private sealed interface FindState {
@@ -447,11 +443,12 @@ private fun FindStep(viewModel: MainViewModel, vin: String) {
         is FindState.Failed -> StatusLine(s.message, ok = false, variants = variants)
     }
     LinearProgressIndicator(Modifier.fillMaxWidth().alpha(if (state is FindState.Searching) 1f else 0f))
-    OutlinedButton(
+    TeslaButton(
+        label = stringResource(R.string.guide_find_again),
         onClick = { attempt++ },
         enabled = state !is FindState.Searching,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-    ) { Text(stringResource(R.string.guide_find_again)) }
+        modifier = Modifier.fillMaxWidth(),
+    )
     // Last on the step, so showing it moves nothing.
     if ((state as? FindState.Found)?.connectable == false) {
         Illustration(Picture.TOO_MANY_CONNECTIONS, stringResource(R.string.trouble_full_picture))
@@ -473,15 +470,15 @@ private fun RoleStep(role: String, onRole: (String) -> Unit) {
 private fun RoleOption(value: String, selected: String, title: Int, description: Int, onSelect: (String) -> Unit) {
     val picture = if (value == "owner") R.drawable.ic_action_role_owner else R.drawable.ic_action_role_driver
     val isSelected = value == selected
+    // A plain row on the page; the radio button shows the choice.
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+        color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
             .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(value) }),
     ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(if (isSelected) Icons.Outlined.RadioButtonChecked else Icons.Outlined.RadioButtonUnchecked, contentDescription = null)
             Spacer(Modifier.width(16.dp))
             Icon(painterResource(picture), contentDescription = null, modifier = Modifier.size(36.dp))
@@ -553,11 +550,11 @@ private fun PairStep(viewModel: MainViewModel, vin: String, role: String, paired
     // The buttons stay where they are while waiting, and the status line below has room for every
     // message, so nothing on this step moves as pairing goes on.
     val idle = state is PairState.Idle || state is PairState.Failed
-    Button(onClick = { request() }, enabled = idle, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
-        Text(stringResource(R.string.guide_pair_send))
-    }
-    TextButton(
+    TeslaButton(stringResource(R.string.guide_pair_send), { request() }, Modifier.fillMaxWidth(), outlined = true, enabled = idle)
+    TeslaButton(
+        label = stringResource(R.string.guide_skip_pairing),
         enabled = idle,
+        modifier = Modifier.fillMaxWidth(),
         onClick = {
             scope.launch {
                 state = PairState.Sending
@@ -569,7 +566,7 @@ private fun PairStep(viewModel: MainViewModel, vin: String, role: String, paired
                 }
             }
         },
-    ) { Text(stringResource(R.string.guide_skip_pairing)) }
+    )
     val connectingText = stringResource(R.string.status_connecting)
     val doneText = stringResource(R.string.guide_pair_done)
     val waitingSample = stringResource(R.string.guide_pair_waiting, "0:00")
@@ -637,7 +634,7 @@ private fun DoneStep(viewModel: MainViewModel, carName: String) {
     Illustration(Picture.SUCCESS, stringResource(R.string.guide_pair_done))
     StepTitle(stringResource(R.string.guide_done_title))
     Body(stringResource(R.string.guide_done_body, carName))
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer) {
+    SectionGroup {
         ToggleRow(
             title = stringResource(R.string.settings_stay_connected),
             description = stringResource(R.string.settings_stay_connected_desc),
@@ -651,7 +648,8 @@ private fun DoneStep(viewModel: MainViewModel, carName: String) {
     }
     Illustration(Picture.TILE, stringResource(R.string.guide_done_picture))
     if (LockTileService.canRequestAdd) {
-        OutlinedButton(
+        TeslaButton(
+            label = stringResource(R.string.guide_add_tile),
             onClick = {
                 LockTileService.requestAdd(context) { result ->
                     if (result == LockTileService.Companion.AddResult.ALREADY_ADDED) {
@@ -659,8 +657,8 @@ private fun DoneStep(viewModel: MainViewModel, carName: String) {
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        ) { Text(stringResource(R.string.guide_add_tile)) }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
     Body(stringResource(R.string.guide_tile_manual))
 }

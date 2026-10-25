@@ -8,15 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,10 +34,12 @@ import io.github.teslablecontrol.ui.BackScaffold
 import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
 import io.github.teslablecontrol.ui.UiMessage
-import io.github.teslablecontrol.ui.components.ActionRow
+import io.github.teslablecontrol.ui.components.ButtonWithNote
 import io.github.teslablecontrol.ui.components.InfoRow
-import io.github.teslablecontrol.ui.components.SectionCard
+import io.github.teslablecontrol.ui.components.SectionGroup
 import io.github.teslablecontrol.ui.components.SectionHeader
+import io.github.teslablecontrol.ui.components.TeslaButton
+import io.github.teslablecontrol.ui.components.inGroup
 import io.github.teslablecontrol.ui.format.Units
 import io.github.teslablecontrol.ui.format.distanceFromMiles
 import io.github.teslablecontrol.ui.format.oneDecimal
@@ -71,11 +69,12 @@ fun DetailsScreen(viewModel: MainViewModel, navigator: Navigator) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(Modifier.widthIn(max = 840.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
+                TeslaButton(
+                    label = stringResource(R.string.details_load_all),
                     onClick = { viewModel.refresh(StateCategory.entries, wake = true) },
-                    enabled = !reading,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                ) { Text(stringResource(R.string.details_load_all)) }
+                    busy = reading,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Text(
                     stringResource(R.string.commands_wakes_car),
                     style = MaterialTheme.typography.bodySmall,
@@ -135,13 +134,13 @@ fun DetailsScreen(viewModel: MainViewModel, navigator: Navigator) {
                         InfoRow("Coordinates", coordinates)
                         if (l.hasHeading()) InfoRow("Heading", "${l.heading}°")
                         if (l.hasLocationName() && l.locationName.isNotBlank()) InfoRow("Place", l.locationName)
-                        ActionRow(
-                            title = stringResource(R.string.details_copy_coordinates),
-                            icon = Icons.Outlined.ContentCopy,
+                        ButtonWithNote(
+                            label = stringResource(R.string.details_copy_coordinates),
                             onClick = {
                                 context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Coordinates", coordinates))
                                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) viewModel.emit(UiMessage(resources.getString(R.string.copied)))
                             },
+                            modifier = Modifier.inGroup(),
                         )
                     }
                 }
@@ -241,7 +240,7 @@ fun DetailsScreen(viewModel: MainViewModel, navigator: Navigator) {
 @Composable
 private fun Section(title: String, updatedAtMillis: Long?, content: @Composable () -> Unit) {
     SectionHeader(title)
-    SectionCard {
+    SectionGroup {
         content()
         Text(
             relativeTime(updatedAtMillis)?.let { stringResource(R.string.details_updated, it) } ?: stringResource(R.string.details_never),

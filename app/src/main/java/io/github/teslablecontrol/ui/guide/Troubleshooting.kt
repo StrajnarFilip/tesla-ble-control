@@ -25,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -68,21 +69,20 @@ enum class TroubleTopic(val title: Int, val picture: Picture, val pictureDescrip
 fun TroubleshootingContent(initial: TroubleTopic?, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        // The topics bring their own side padding, so their touch feedback spans the screen.
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp),
     ) {
-        items(TroubleTopic.entries) { topic -> TopicCard(topic, expandedInitially = topic == initial) }
+        items(TroubleTopic.entries) { topic -> Topic(topic, expandedInitially = topic == initial) }
     }
 }
 
 @Composable
-private fun TopicCard(topic: TroubleTopic, expandedInitially: Boolean) {
+private fun Topic(topic: TroubleTopic, expandedInitially: Boolean) {
     var expanded by rememberSaveable(topic) { mutableStateOf(expandedInitially) }
     val expandedText = stringResource(if (expanded) R.string.action_close else R.string.action_help)
     Surface(
         onClick = { expanded = !expanded },
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = Color.Transparent,
         modifier = Modifier.fillMaxWidth().semantics { stateDescription = expandedText },
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

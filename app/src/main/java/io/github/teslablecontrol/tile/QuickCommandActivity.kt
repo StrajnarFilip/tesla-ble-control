@@ -10,7 +10,6 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,11 +18,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +45,7 @@ import io.github.teslablecontrol.core.CommandOutcome
 import io.github.teslablecontrol.core.FailureKind
 import io.github.teslablecontrol.data.VehicleProfile
 import io.github.teslablecontrol.ui.commands.CommandInfos
+import io.github.teslablecontrol.ui.components.DialogButtons
 import io.github.teslablecontrol.ui.format.failureMessage
 import io.github.teslablecontrol.ui.format.stageText
 import io.github.teslablecontrol.ui.theme.AppTheme
@@ -139,7 +137,7 @@ private fun QuickCommandCard(
     Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
         ) {
             Column(
@@ -171,10 +169,7 @@ private fun QuickCommandCard(
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 )
                 // Always shown, so the card keeps its size when the result comes in.
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = onClose) { Text(stringResource(R.string.action_close)) }
-                    Button(onClick = onOpenApp) { Text(stringResource(R.string.action_open_app)) }
-                }
+                DialogButtons(stringResource(R.string.action_close), onClose, stringResource(R.string.action_open_app), onOpenApp)
             }
         }
     }

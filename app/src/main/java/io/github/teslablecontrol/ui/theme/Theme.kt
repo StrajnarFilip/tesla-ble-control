@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +44,7 @@ val DarkColors: ColorScheme = darkColorScheme(
     surfaceContainer = Palette.DarkSurfaceContainer,
     surfaceContainerHigh = Palette.DarkSurfaceHigh,
     surfaceContainerHighest = Palette.DarkSurfaceHighest,
+    surfaceBright = Palette.DarkSurfaceBright,
     outline = Palette.DarkOutline,
     outlineVariant = Palette.DarkOutlineVariant,
     error = Palette.DarkError,
@@ -72,6 +74,7 @@ val LightColors: ColorScheme = lightColorScheme(
     surfaceContainer = Palette.LightSurfaceContainer,
     surfaceContainerHigh = Palette.LightSurfaceHigh,
     surfaceContainerHighest = Palette.LightSurfaceHighest,
+    surfaceBright = Palette.LightSurfaceBright,
     outline = Palette.LightOutline,
     outlineVariant = Palette.LightOutlineVariant,
     error = Palette.LightError,
@@ -88,45 +91,52 @@ val LocalStatusColors = staticCompositionLocalOf {
     StatusColors(Palette.DarkSuccess, Palette.DarkWarning, Palette.DarkError)
 }
 
-/**
- * Barlow, drawn from California highway signs and licence plates, for everything you read; its semi
- * condensed cut, with tabular figures, for readings, like an instrument cluster.
- */
-val Barlow = FontFamily(
-    Font(R.font.barlow_regular, FontWeight.Normal),
-    Font(R.font.barlow_medium, FontWeight.Medium),
-    Font(R.font.barlow_semibold, FontWeight.SemiBold),
+/** One weight of the variable Inter font at an optical size (14 for text, up to 32 for display). */
+private fun inter(weight: FontWeight, opticalSize: Float) = Font(
+    R.font.inter,
+    weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight), FontVariation.Setting("opsz", opticalSize)),
 )
 
-val BarlowSemiCondensed = FontFamily(
-    Font(R.font.barlow_semi_condensed_medium, FontWeight.Medium),
-    Font(R.font.barlow_semi_condensed_semibold, FontWeight.SemiBold),
+/**
+ * Inter, a typeface drawn for screens and close to the lettering on the car's own touchscreen, for
+ * everything you read; its display cut, with tabular figures, for readings.
+ */
+val Inter = FontFamily(
+    inter(FontWeight.Normal, 14f),
+    inter(FontWeight.Medium, 14f),
+    inter(FontWeight.SemiBold, 14f),
+)
+
+val InterDisplay = FontFamily(
+    inter(FontWeight.Medium, 32f),
+    inter(FontWeight.SemiBold, 32f),
 )
 
 /** Larger-than-default type: body text is 16–17 sp and nothing is smaller than 14 sp. */
 val AppTypography = Typography().let { base ->
-    fun TextStyle.barlow(size: Int, line: Int, weight: FontWeight = FontWeight.Normal) =
-        copy(fontFamily = Barlow, fontSize = size.sp, lineHeight = line.sp, fontWeight = weight, letterSpacing = 0.sp)
+    fun TextStyle.inter(size: Int, line: Int, weight: FontWeight = FontWeight.Normal) =
+        copy(fontFamily = Inter, fontSize = size.sp, lineHeight = line.sp, fontWeight = weight, letterSpacing = 0.sp)
     base.copy(
-        displaySmall = base.displaySmall.barlow(40, 46, FontWeight.SemiBold),
-        headlineMedium = base.headlineMedium.barlow(28, 34, FontWeight.SemiBold),
-        headlineSmall = base.headlineSmall.barlow(24, 30, FontWeight.SemiBold),
-        titleLarge = base.titleLarge.barlow(22, 28, FontWeight.SemiBold),
-        titleMedium = base.titleMedium.barlow(19, 25, FontWeight.SemiBold),
-        titleSmall = base.titleSmall.barlow(17, 22, FontWeight.SemiBold),
-        bodyLarge = base.bodyLarge.barlow(17, 25),
-        bodyMedium = base.bodyMedium.barlow(16, 23),
-        bodySmall = base.bodySmall.barlow(14, 20),
-        labelLarge = base.labelLarge.barlow(16, 22, FontWeight.Medium),
-        labelMedium = base.labelMedium.barlow(14, 20, FontWeight.Medium),
-        labelSmall = base.labelSmall.barlow(14, 18, FontWeight.Medium),
+        displaySmall = base.displaySmall.inter(40, 46, FontWeight.SemiBold),
+        headlineMedium = base.headlineMedium.inter(28, 34, FontWeight.SemiBold),
+        headlineSmall = base.headlineSmall.inter(24, 30, FontWeight.SemiBold),
+        titleLarge = base.titleLarge.inter(22, 28, FontWeight.SemiBold),
+        titleMedium = base.titleMedium.inter(19, 25, FontWeight.SemiBold),
+        titleSmall = base.titleSmall.inter(17, 22, FontWeight.SemiBold),
+        bodyLarge = base.bodyLarge.inter(17, 25),
+        bodyMedium = base.bodyMedium.inter(16, 23),
+        bodySmall = base.bodySmall.inter(14, 20),
+        labelLarge = base.labelLarge.inter(16, 22, FontWeight.Medium),
+        labelMedium = base.labelMedium.inter(14, 20, FontWeight.Medium),
+        labelSmall = base.labelSmall.inter(14, 18, FontWeight.Medium),
     )
 }
 
 /** Big readings: battery, range, temperatures. Tabular figures keep digits from shifting as values change. */
 val NumberStyle = TextStyle(
-    fontFamily = BarlowSemiCondensed,
-    fontWeight = FontWeight.SemiBold,
+    fontFamily = InterDisplay,
+    fontWeight = FontWeight.Medium,
     fontSize = 38.sp,
     lineHeight = 42.sp,
     fontFeatureSettings = "tnum",
@@ -134,7 +144,7 @@ val NumberStyle = TextStyle(
 
 /** The unit beside a reading, smaller so the number leads. */
 val UnitStyle = TextStyle(
-    fontFamily = BarlowSemiCondensed,
+    fontFamily = Inter,
     fontWeight = FontWeight.Medium,
     fontSize = 18.sp,
     lineHeight = 22.sp,

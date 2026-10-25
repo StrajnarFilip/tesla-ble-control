@@ -141,4 +141,4 @@ seconds.
 Copyright 2026 Filip Strajnar. Licensed under the [Apache License, Version 2.0](LICENSE).
 
 The protocol code is derived from Tesla's vehicle-command (also Apache 2.0), and the app bundles the
-Barlow typeface (SIL Open Font License 1.1); see [NOTICE](NOTICE).
+Inter typeface (SIL Open Font License 1.1); see [NOTICE](NOTICE).

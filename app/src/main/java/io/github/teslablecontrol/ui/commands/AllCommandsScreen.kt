@@ -1,6 +1,7 @@
 package io.github.teslablecontrol.ui.commands
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
@@ -27,8 +27,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -42,7 +40,7 @@ import io.github.teslablecontrol.ui.BackScaffold
 import io.github.teslablecontrol.ui.CommandRoute
 import io.github.teslablecontrol.ui.MainViewModel
 import io.github.teslablecontrol.ui.Navigator
-import io.github.teslablecontrol.ui.components.ActionRow
+import io.github.teslablecontrol.ui.components.ButtonWithNote
 import io.github.teslablecontrol.ui.components.SectionHeader
 
 /** Every command, grouped and searchable; each opens a form built from its parameters. */
@@ -104,19 +102,23 @@ fun AllCommandsScreen(viewModel: MainViewModel, navigator: Navigator) {
                             if (spec.requirement == SessionRequirement.INFOTAINMENT) wakes else asleep,
                             info.models?.joinToString(" / ") { it.label }?.let { modelOnly.format(it) },
                         )
-                        ActionRow(
-                            title = info.title,
-                            description = "${info.description}\n${notes.joinToString(" · ")}",
-                            icon = info.picture?.let { painterResource(it) } ?: rememberVectorPainter(info.icon),
-                            busy = running == info.id,
+                        ButtonWithNote(
+                            label = info.title,
                             onClick = { navigator.to(CommandRoute(info.id)) },
+                            note = "${info.description}\n${notes.joinToString(" · ")}",
+                            busy = running == info.id,
+                            modifier = Modifier.padding(vertical = 6.dp),
                         )
                     }
                 }
                 if (query.isBlank()) {
                     item { SectionHeader(stringResource(R.string.commands_unavailable)) }
                     items(CommandInfos.unavailableOverBluetooth, key = { it.first }) { (title, reason) ->
-                        ActionRow(title = title, description = reason, icon = Icons.Outlined.Block, enabled = false, onClick = {})
+                        // Not buttons: these can't be sent from here at all.
+                        Column(Modifier.padding(vertical = 8.dp).semantics(mergeDescendants = true) {}) {
+                            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
